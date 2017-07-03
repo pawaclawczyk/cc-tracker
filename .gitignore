@@ -1,4 +1,5 @@
 /.idea/
+/var/log/
 /vendor/
 .php_cs.cache
 composer.lock
