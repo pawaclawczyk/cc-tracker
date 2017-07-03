@@ -6,3 +6,14 @@ services:
       - ./var/static:/usr/share/nginx/html:ro
     ports:
       - "8080:80"
+  tracker:
+    build:
+      context: .
+      dockerfile: config/tracker/Dockerfile
+    container_name: tracker
+    image: tracker
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/app
+    command: "/app/vendor/bin/aerys --config /app/src/aerys.php"
