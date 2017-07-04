@@ -8,6 +8,10 @@ use Aerys\Host;
 use function Aerys\router;
 use CC\Tracker\Controller\PixelController;
 
+const AERYS_OPTIONS = [
+    "connectionsPerIP" => 1000,
+];
+
 $router = router()
     ->get("/pixel.gif", new PixelController());
 

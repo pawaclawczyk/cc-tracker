@@ -10,11 +10,12 @@ services:
   tracker:
     build:
       context: .
-      dockerfile: config/tracker/Dockerfile
+#      dockerfile: config/tracker/php.dockerfile
+      dockerfile: config/tracker/php-eio-ev.dockerfile
     container_name: tracker
     image: tracker
     ports:
       - "9000:9000"
     volumes:
       - .:/app
-    command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug"
+    command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug --workers 8"
