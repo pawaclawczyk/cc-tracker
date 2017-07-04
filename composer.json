@@ -15,6 +15,11 @@
         "phpunit/phpunit": "^6.2",
         "friendsofphp/php-cs-fixer": "^2.3"
     },
+    "autoload": {
+        "psr-4": {
+            "": "src/"
+        }
+    },
     "scripts": {
         "cs": "vendor/bin/php-cs-fixer fix"
     }

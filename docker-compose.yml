@@ -17,4 +17,4 @@ services:
       - "9000:9000"
     volumes:
       - .:/app
-    command: "/app/vendor/bin/aerys --config /app/src/aerys.php"
+    command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug"
