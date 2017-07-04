@@ -1,0 +1,39 @@
+{
+  "variables": {
+    "aws_access_key": "",
+    "aws_secret_key": ""
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "access_key": "{{user `aws_access_key`}}",
+    "secret_key": "{{user `aws_secret_key`}}",
+    "region": "eu-west-1",
+    "source_ami_filter": {
+      "filters": {
+        "virtualization-type": "hvm",
+        "name": "*ubuntu-xenial-16.04-amd64-server-*",
+        "root-device-type": "ebs"
+      },
+      "owners": ["099720109477"],
+      "most_recent": true
+    },
+    "instance_type": "t2.micro",
+    "ssh_username": "ubuntu",
+    "ami_name": "tracker {{timestamp}}"
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sleep 30",
+      "sudo add-apt-repository ppa:ondrej/php",
+      "sudo apt-get update",
+      "sudo apt-get install -y php7.1 php7.1-dev",
+      "sudo pecl install eio",
+      "sudo pecl install ev",
+      "sudo sh -c 'printf \"[eio]\nextension=eio.so\n\" > /etc/php/7.1/mods-available/eio.ini'",
+      "sudo sh -c 'printf \"[ev]\nextension=ev.so\n\" > /etc/php/7.1/mods-available/ev.ini'",
+      "sudo phpenmod eio",
+      "sudo phpenmod ev"
+    ]
+  }]
+}
