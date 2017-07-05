@@ -48,7 +48,7 @@ final class PixelController
 
     public function __construct()
     {
-        $this->pixelLoader = new FilePixelLoader();
+        $this->pixelLoader = new FilePixelLoader(__DIR__.'/../../../../var/static/pixel.gif');
         $this->messageQueue = new RabbitMessageQueue();
         $this->fileQueue = new FileMessageQueue();
     }

@@ -6,12 +6,18 @@ namespace CC\Tracker\Infrastructure;
 
 use CC\Tracker\Model\Pixel;
 use CC\Tracker\Model\PixelLoader;
+use Throwable;
+use RuntimeException;
 
 final class FilePixelLoader implements PixelLoader
 {
+    private $path;
     private $pixel;
 
-    private $path = __DIR__ . '/../../../../var/static/pixel.gif';
+    public function __construct(string $path)
+    {
+        $this->path = $path;
+    }
 
     public function load()
     {
@@ -24,9 +30,13 @@ final class FilePixelLoader implements PixelLoader
 
     private function readFile()
     {
-        $f = fopen($this->path, 'rb');
-        $bin = fread($f, 1024);
-        fclose($f);
+        try {
+            $f = fopen($this->path, 'rb');
+            $bin = fread($f, 1024);
+            fclose($f);
+        } catch (Throwable $e) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
 
         return $bin;
     }

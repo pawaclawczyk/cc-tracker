@@ -23,7 +23,13 @@
             "": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "scripts": {
-        "cs": "vendor/bin/php-cs-fixer fix"
+        "cs": "vendor/bin/php-cs-fixer fix",
+        "test": "vendor/bin/phpunit tests/"
     }
 }
