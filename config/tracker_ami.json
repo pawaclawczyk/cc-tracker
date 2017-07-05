@@ -21,19 +21,23 @@
     "ssh_username": "ubuntu",
     "ami_name": "tracker {{timestamp}}"
   }],
-  "provisioners": [{
-    "type": "shell",
-    "inline": [
-      "sleep 30",
-      "sudo add-apt-repository ppa:ondrej/php",
-      "sudo apt-get update",
-      "sudo apt-get install -y php7.1 php7.1-dev",
-      "sudo pecl install eio",
-      "sudo pecl install ev",
-      "sudo sh -c 'printf \"[eio]\nextension=eio.so\n\" > /etc/php/7.1/mods-available/eio.ini'",
-      "sudo sh -c 'printf \"[ev]\nextension=ev.so\n\" > /etc/php/7.1/mods-available/ev.ini'",
-      "sudo phpenmod eio",
-      "sudo phpenmod ev"
-    ]
+  "provisioners": [
+    {
+      "type": "shell",
+      "inline": [
+        "sleep 30",
+        "sudo add-apt-repository ppa:ondrej/php",
+        "sudo apt-get update",
+        "sudo apt-get install -y php7.1 php7.1-dev php7.1-mbstring",
+        "sudo pecl install eio",
+        "sudo pecl install ev",
+        "sudo sh -c 'printf \"[eio]\nextension=eio.so\n\" > /etc/php/7.1/mods-available/eio.ini'",
+        "sudo sh -c 'printf \"[ev]\nextension=ev.so\n\" > /etc/php/7.1/mods-available/ev.ini'",
+        "sudo phpenmod eio",
+        "sudo phpenmod ev",
+        "git clone https://github.com/pawaclawczyk/cc-tracker.git tracker",
+        "sudo apt-get -y install composer",
+        "cd tracker && composer install"
+      ]
   }]
 }
