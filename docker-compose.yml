@@ -19,3 +19,17 @@ services:
     volumes:
       - .:/app
     command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug --workers 8"
+    links:
+      - rabbit
+  rabbit:
+    image: rabbitmq:management
+    environment:
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit.123
+    ports: #4369 5671 5672 25672 15671 15672
+      - "4369:4369"
+      - "5671:5671"
+      - "5672:5672"
+      - "25672:25672"
+      - "15671:15671"
+      - "15672:15672"
