@@ -1,5 +1,7 @@
 /.idea/
+/config/gcloud/credentials.json
 /var/log/
 /vendor/
+terraform.tfstate*
 .php_cs.cache
 composer.lock
