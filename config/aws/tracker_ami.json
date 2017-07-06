@@ -19,7 +19,7 @@
     },
     "instance_type": "t2.micro",
     "ssh_username": "ubuntu",
-    "ami_name": "tracker {{timestamp}}"
+    "ami_name": "tracker-{{timestamp}}"
   }],
   "provisioners": [
     {
