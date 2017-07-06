@@ -1,10 +1,39 @@
+variable "project_id" {
+  default = "cc-tracker-172907"
+}
+
+variable "credentials" {
+  default = "credentials.json"
+}
+
+variable "region" {
+  default = "europe-west1"
+}
+
+variable "zone" {
+  default = "europe-west1-d"
+}
+
+variable "instance_type" {
+  default = "f1-micro"
+}
+
 variable "startup_script" {
   default = "startup.sh"
 }
 
+variable "ssh_user" {
+  default = "ubuntu"
+}
+
+variable "ssh_pub_key" {
+  default = "~/.ssh/id_rsa.pub"
+}
+
 provider "google" {
-  project     = "cc-tracker-172907"
-  region      = "europe-west1"
+  project     = "${var.project_id}"
+  region      = "${var.region}"
+  credentials = "${file(var.credentials)}"
 }
 
 resource "google_compute_network" "tracker-network" {
@@ -28,8 +57,8 @@ resource "google_compute_firewall" "tracker-firewall" {
 
 resource "google_compute_instance" "tracker" {
   name         = "tracker"
-  machine_type = "f1-micro"
-  zone         = "europe-west1-d"
+  machine_type = "${var.instance_type}"
+  zone         = "${var.zone}"
 
   disk {
     image = "tracker"
@@ -44,7 +73,7 @@ resource "google_compute_instance" "tracker" {
   }
 
   metadata {
-    sshKeys = "ubuntu:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2rv2xoKkJb9WLZThCkea4TySJhpHYBMu5cZ/8vjijgwU7mmwWQVa4mqrrYYFNzf6GiR0hId09/4mdllXysdoy05QkAdq0drJrxNB5t+bAuPDJXOwVIaKV8TLlcoDRy7M82eyyvB3COa+liccoPz+5E/R8YUsrPZLAIi9yJsjSMoQ6HdpLt68sSret5Q460+BgVJBTzjEbL89gUHdzYcCEDobeXF3rO1qo0Wnf3pCtFUnJKhVmAbTzCqwimEG61pLYvufai9EmIuA7B9X6J9ce9vrpqlsedIVGd6Pvr7kAKPnzT0nUfxFEuLVNGfihJF7H4CoO7h4/lQCl43ZQwawn pwc@MacBook-Pro-Pawe.local"
+    sshKeys = "${var.ssh_user}:${file(var.ssh_pub_key)}"
   }
 
   metadata_startup_script = "${file(var.startup_script)}"
