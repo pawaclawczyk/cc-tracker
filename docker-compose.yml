@@ -10,7 +10,6 @@ services:
   tracker:
     build:
       context: .
-#      dockerfile: config/tracker/php.dockerfile
       dockerfile: config/tracker/php-eio-ev.dockerfile
     container_name: tracker
     image: tracker
@@ -21,8 +20,21 @@ services:
     command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug --workers 8"
     links:
       - rabbit
+  processor:
+    build:
+      context: .
+      dockerfile: config/tracker/php-eio-ev.dockerfile
+    container_name: processor
+    image: processor
+    volumes:
+      - .:/app
+    command: "php /app/src/CC/Processor/app.php"
+    links:
+      - rabbit
+      - mysql
   rabbit:
     image: rabbitmq:management
+    container_name: rabbit
     environment:
       RABBITMQ_DEFAULT_USER: rabbit
       RABBITMQ_DEFAULT_PASS: rabbit.123
@@ -33,3 +45,13 @@ services:
       - "25672:25672"
       - "15671:15671"
       - "15672:15672"
+  mysql:
+    image: "mysql"
+    container_name: "mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql.123
+      MYSQL_DATABASE: tracker
+      MYSQL_USER: tracker
+      MYSQL_PASSWORD: tracker.123
+    ports:
+      - "3306:3306"
