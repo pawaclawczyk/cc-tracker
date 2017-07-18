@@ -6,11 +6,6 @@ namespace CC\Tracker\Controller;
 
 use Aerys\Request;
 use Aerys\Response;
-use function Amp\coroutine;
-use Amp\File;
-use CC\Tracker\Infrastructure\FileMessageQueue;
-use CC\Tracker\Infrastructure\FilePixelLoader;
-use CC\Tracker\Infrastructure\RabbitMessageQueue;
 use CC\Tracker\Model\Message;
 use CC\Tracker\Model\MessageQueue;
 use CC\Tracker\Model\PixelLoader;
@@ -23,9 +18,6 @@ final class PixelController
     /** @var MessageQueue */
     private $messageQueue;
 
-    /** @var MessageQueue */
-    private $fileQueue;
-
     public function __invoke(Request $request, Response $response)
     {
         yield $response
@@ -35,7 +27,6 @@ final class PixelController
         $message = $this->prepareData($request);
 
         $this->messageQueue->send($message);
-        $this->fileQueue->send($message);
     }
 
     private function prepareData(Request $request): Message
@@ -46,10 +37,9 @@ final class PixelController
         )));
     }
 
-    public function __construct()
+    public function __construct(PixelLoader $pixelLoader, MessageQueue $messageQueue)
     {
-        $this->pixelLoader = new FilePixelLoader(__DIR__.'/../../../../var/static/pixel.gif');
-        $this->messageQueue = new RabbitMessageQueue();
-        $this->fileQueue = new FileMessageQueue();
+        $this->pixelLoader = $pixelLoader;
+        $this->messageQueue = $messageQueue;
     }
 }

@@ -13,21 +13,31 @@ use React\Promise\PromiseInterface;
 
 final class RabbitMessageQueue implements MessageQueue
 {
+    private $options;
+    private $queue;
     private $connection;
 
-    public function send(Message $message)
+    public function __construct(array $options, string $queue)
     {
-        $this->connect()
+        $this->options = $options;
+        $this->queue = $queue;
+    }
+
+    public function send(Message $message): PromiseInterface
+    {
+        $queue = $this->queue;
+
+        return $this->connect()
             ->then(function (Client $client) {
                 return $client->channel();
             })
-            ->then(function (Channel $channel) {
-                $channel->queueDeclare('tracker');
+            ->then(function (Channel $channel) use ($queue) {
+                $channel->queueDeclare($queue);
 
                 return $channel;
             })
-            ->then(function (Channel $channel) use ($message) {
-                $channel->publish((string) $message, [], '', 'tracker');
+            ->then(function (Channel $channel) use ($message, $queue) {
+                return $channel->publish((string) $message, [], '', $queue);
             });
     }
 
@@ -37,14 +47,8 @@ final class RabbitMessageQueue implements MessageQueue
             return $this->connection;
         }
 
-        $options = [
-            'host'      => 'rabbit',
-            'user'      => 'rabbit',
-            'password'  => 'rabbit.123',
-        ];
-
         return $this->connection =
-            (new Client(ReactAdapter::get(), $options))
+            (new Client(ReactAdapter::get(), $this->options))
                 ->connect();
     }
 }
