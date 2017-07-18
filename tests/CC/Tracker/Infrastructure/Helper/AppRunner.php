@@ -12,7 +12,7 @@ final class AppRunner
     /** @var resource[] */
     private $pipes;
 
-    public function start(int $port, string $queue): AppRunner
+    public function start(array $environments = []): AppRunner
     {
         $command = 'php vendor/bin/aerys --config src/aerys.php --debug --workers 1';
 
@@ -28,11 +28,8 @@ final class AppRunner
             $command,
             $descriptors,
             $this->pipes,
-            $cwd, [
-                'CC_TRACKER_PORT' => $port,
-                'CC_TRACKER_QUEUE' => $queue,
-                'CC_TRACKER_MQ_HOST' => '127.0.0.1',
-            ]
+            $cwd,
+            $environments
         );
 
         stream_set_blocking($this->pipes[0], false);

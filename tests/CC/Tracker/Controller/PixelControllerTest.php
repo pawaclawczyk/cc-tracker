@@ -2,6 +2,7 @@
 
 namespace Tests\CC\Tracker\Controller;
 
+use CC\Tracker\Environments;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Tests\CC\Tracker\Infrastructure\Helper\AppRunner;
@@ -9,6 +10,9 @@ use Tests\CC\Tracker\Infrastructure\Helper\RabbitMessageQueueReader;
 
 class PixelControllerTest extends TestCase
 {
+    const HOST_PORT = 12345;
+    const MQ_HOST   = "127.0.0.1";
+
     /** @var string */
     private $queue;
 
@@ -51,22 +55,25 @@ class PixelControllerTest extends TestCase
 
         $this->queue = uniqid('queue_');
 
-        $this->appRunner = (new AppRunner())->start(12345, $this->queue);
+        $this->appRunner = (new AppRunner())->start([
+            Environments::CC_TRACKER_HOST_PORT  => self::HOST_PORT,
+            Environments::CC_TRACKER_QUEUE_NAME => $this->queue,
+            Environments::CC_TRACKER_MQ_HOST    => self::MQ_HOST,
+        ]);
 
         $this->reader = new RabbitMessageQueueReader([
-            'host' => '127.0.0.1',
-            'user' => 'rabbit',
+            'host'     => self::MQ_HOST,
+            'user'     => 'rabbit',
             'password' => 'rabbit.123',
         ]);
 
         $this->client = new Client([
-            'base_uri' => 'http://127.0.0.1:12345'
+            'base_uri' => sprintf("http://127.0.0.1:%d", self::HOST_PORT),
         ]);
     }
 
     protected function tearDown()
     {
-        $this->appRunner->debug();
         $this->appRunner->stop();
 
         parent::tearDown();

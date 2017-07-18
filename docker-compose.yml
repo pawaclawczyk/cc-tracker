@@ -44,7 +44,7 @@ services:
       - "5672:5672"
       - "25672:25672"
       - "15671:15671"
-      - "15672:15672"
+      - "15672:15672" # GUI
 #  mysql:
 #    image: "mysql"
 #    container_name: "mysql"

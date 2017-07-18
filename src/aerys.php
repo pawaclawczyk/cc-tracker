@@ -9,26 +9,29 @@ use function Aerys\router;
 use CC\Tracker\Controller\PixelController;
 use CC\Tracker\Infrastructure\FilePixelLoader;
 use CC\Tracker\Infrastructure\RabbitMessageQueue;
+use CC\Tracker\Environments;
 
 const AERYS_OPTIONS = [
     "connectionsPerIP" => 1000,
 ];
 
-$params = [
-    'host'      => getenv('CC_TRACKER_MQ_HOST') ?: 'rabbit',
-    'user'      => 'rabbit',
-    'password'  => 'rabbit.123',
+$rabbitMQConnectionParameters = [
+    'host'      => getenv(Environments::CC_TRACKER_MQ_HOST)     ?: 'rabbit',
+    'user'      => getenv(Environments::CC_TRACKER_MQ_USER)     ?: 'rabbit',
+    'password'  => getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: 'rabbit.123',
 ];
 
-$queue = getenv('CC_TRACKER_QUEUE') ?: 'tracker';
-$port = (int) getenv('CC_TRACKER_PORT') ?: 9000;
+$queue     =       getenv(Environments::CC_TRACKER_QUEUE_NAME)   ?: 'tracker';
+$host      =       getenv(Environments::CC_TRACKER_HOST_ADDRESS) ?: '*';
+$port      = (int) getenv(Environments::CC_TRACKER_HOST_PORT)    ?: 9000;
+$pixelFile =       getenv(Environments::CC_TRACKER_PIXEL_FILE)   ?: __DIR__.'/../var/static/pixel.gif';
 
-$pixelLoader = new FilePixelLoader(__DIR__.'/../var/static/pixel.gif');
-$messageQueue = new RabbitMessageQueue($params, $queue);
+$pixelLoader = new FilePixelLoader($pixelFile);
+$messageQueue = new RabbitMessageQueue($rabbitMQConnectionParameters, $queue);
 
 $router = router()
     ->get("/pixel.gif", new PixelController($pixelLoader, $messageQueue));
 
 $host = (new Host())
-    ->expose("*", $port)
+    ->expose($host, $port)
     ->use($router);
