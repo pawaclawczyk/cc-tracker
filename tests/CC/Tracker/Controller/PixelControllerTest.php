@@ -11,7 +11,7 @@ use Tests\CC\Tracker\Infrastructure\Helper\RabbitMessageQueueReader;
 class PixelControllerTest extends TestCase
 {
     const HOST_PORT = 12345;
-    const MQ_HOST   = "127.0.0.1";
+    const LOCALHOST   = "127.0.0.1";
 
     /** @var string */
     private $queue;
@@ -56,19 +56,19 @@ class PixelControllerTest extends TestCase
         $this->queue = uniqid('queue_');
 
         $this->appRunner = (new AppRunner())->start([
-            Environments::CC_TRACKER_HOST_PORT  => self::HOST_PORT,
+            Environments::CC_TRACKER_HOST_PORT  => getenv(Environments::CC_TRACKER_HOST_PORT) ?: 9000,
             Environments::CC_TRACKER_QUEUE_NAME => $this->queue,
-            Environments::CC_TRACKER_MQ_HOST    => self::MQ_HOST,
+            Environments::CC_TRACKER_MQ_HOST    => getenv(Environments::CC_TRACKER_MQ_HOST) ?: "rabbit",
         ]);
 
         $this->reader = new RabbitMessageQueueReader([
-            'host'     => self::MQ_HOST,
-            'user'     => 'rabbit',
-            'password' => 'rabbit.123',
+            'host'     => getenv(Environments::CC_TRACKER_MQ_HOST)     ?: "rabbit",
+            'user'     => getenv(Environments::CC_TRACKER_MQ_USER)     ?: "rabbit",
+            'password' => getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: "rabbit.123",
         ]);
 
         $this->client = new Client([
-            'base_uri' => sprintf("http://127.0.0.1:%d", self::HOST_PORT),
+            'base_uri' => sprintf("http://127.0.0.1:%d", getenv(Environments::CC_TRACKER_HOST_PORT) ?: 9000),
         ]);
     }
 

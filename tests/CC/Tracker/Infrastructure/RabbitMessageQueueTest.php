@@ -2,6 +2,7 @@
 
 namespace Tests\CC\Tracker\Infrastructure;
 
+use CC\Tracker\Environments;
 use CC\Tracker\Infrastructure\RabbitMessageQueue;
 use CC\Tracker\Model\Message;
 use CC\Tracker\Model\MessageQueue;
@@ -44,9 +45,9 @@ class RabbitMessageQueueTest extends TestCase
         parent::setUp();
 
         $this->params = [
-            'host' => '127.0.0.1',
-            'user' => 'rabbit',
-            'password' => 'rabbit.123',
+            'host'     => getenv(Environments::CC_TRACKER_MQ_HOST)     ?: "rabbit",
+            'user'     => getenv(Environments::CC_TRACKER_MQ_USER)     ?: "rabbit",
+            'password' => getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: "rabbit.123",
         ];
 
         $this->queue = uniqid('channel_');
