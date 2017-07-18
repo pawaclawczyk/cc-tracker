@@ -14,7 +14,7 @@ class FilePixelLoaderTest extends TestCase
     /** @test */
     public function it_loads_pixel()
     {
-        $pixelLoader = new FilePixelLoader(__DIR__.'/../../../../var/static/pixel.gif');
+        $pixelLoader = new FilePixelLoader(__DIR__ . '/../../../../var/static/pixel.gif');
 
         $pixel = $pixelLoader->load();
 

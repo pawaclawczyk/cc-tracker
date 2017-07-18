@@ -31,9 +31,9 @@ final class FilePixelLoader implements PixelLoader
     private function readFile()
     {
         try {
-            $f = fopen($this->path, 'rb');
-            $bin = fread($f, 1024);
-            fclose($f);
+            $f   = \fopen($this->path, 'rb');
+            $bin = \fread($f, 1024);
+            \fclose($f);
         } catch (Throwable $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
         }

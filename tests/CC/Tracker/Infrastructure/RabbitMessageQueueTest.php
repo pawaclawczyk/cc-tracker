@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\CC\Tracker\Infrastructure;
 
 use CC\Tracker\Environments;
@@ -30,7 +32,7 @@ class RabbitMessageQueueTest extends TestCase
         $messageToSend = Message::fromString('Hello world!');
 
         $promise = $this->messageQueue->send($messageToSend);
-        $result = wait($promise);
+        $result  = wait($promise);
 
         $this->assertTrue($result);
 
@@ -45,21 +47,21 @@ class RabbitMessageQueueTest extends TestCase
         parent::setUp();
 
         $this->params = [
-            'host'     => getenv(Environments::CC_TRACKER_MQ_HOST)     ?: "rabbit",
-            'user'     => getenv(Environments::CC_TRACKER_MQ_USER)     ?: "rabbit",
-            'password' => getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: "rabbit.123",
+            'host'     => \getenv(Environments::CC_TRACKER_MQ_HOST) ?: 'rabbit',
+            'user'     => \getenv(Environments::CC_TRACKER_MQ_USER) ?: 'rabbit',
+            'password' => \getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: 'rabbit.123',
         ];
 
-        $this->queue = uniqid('channel_');
+        $this->queue = \uniqid('channel_');
 
         $this->messageQueue = new RabbitMessageQueue($this->params, $this->queue);
-        $this->reader = new RabbitMessageQueueReader($this->params);
+        $this->reader       = new RabbitMessageQueueReader($this->params);
     }
 
     protected function tearDown()
     {
         $this->messageQueue = null;
-        $this->reader = null;
+        $this->reader       = null;
 
         parent::tearDown();
     }

@@ -31,7 +31,7 @@ final class PixelController
 
     private function prepareData(Request $request): Message
     {
-        return Message::fromString(json_encode(array_merge(
+        return Message::fromString(\json_encode(\array_merge(
             $request->getAllHeaders(),
             $request->getAllParams()
         )));
@@ -39,7 +39,7 @@ final class PixelController
 
     public function __construct(PixelLoader $pixelLoader, MessageQueue $messageQueue)
     {
-        $this->pixelLoader = $pixelLoader;
+        $this->pixelLoader  = $pixelLoader;
         $this->messageQueue = $messageQueue;
     }
 }
