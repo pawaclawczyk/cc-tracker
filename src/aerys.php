@@ -35,3 +35,5 @@ $router = router()
 $host = (new Host())
     ->expose($host, $port)
     ->use($router);
+
+return $host;
