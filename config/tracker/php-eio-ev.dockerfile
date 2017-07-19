@@ -33,6 +33,10 @@ RUN docker-php-ext-install opcache pcntl pdo_mysql sysvsem sysvshm zip && \
 #RUN pecl install uopz xdebug && \
 #    docker-php-ext-enable uopz xdebug
 
+COPY config/tracker/php.ini /usr/local/etc/php/php.ini
+
+RUN useradd -ms /bin/bash app
 WORKDIR /app
+USER app
 
 CMD ["/bin/bash"]

@@ -15,7 +15,7 @@ final class RabbitMessageQueue implements MessageQueue
 {
     private $options;
     private $queue;
-    private $connection;
+    private $channel;
 
     public function __construct(array $options, string $queue)
     {
@@ -25,30 +25,28 @@ final class RabbitMessageQueue implements MessageQueue
 
     public function send(Message $message): PromiseInterface
     {
-        $queue = $this->queue;
-
-        return $this->connect()
-            ->then(function (Client $client) {
-                return $client->channel();
-            })
-            ->then(function (Channel $channel) use ($queue) {
-                $channel->queueDeclare($queue);
-
-                return $channel;
-            })
+        return $this->connect($this->queue)
             ->then(function (Channel $channel) use ($message, $queue) {
                 return $channel->publish((string) $message, [], '', $queue);
             });
     }
 
-    private function connect(): PromiseInterface
+    private function connect(string $queue): PromiseInterface
     {
-        if ($this->connection) {
-            return $this->connection;
+        if ($this->channel) {
+            return $this->channel;
         }
 
-        return $this->connection =
+        return $this->channel =
             (new Client(ReactAdapter::get(), $this->options))
-                ->connect();
+                ->connect()
+                ->then(function (Client $client) {
+                    return $client->channel();
+                })
+                ->then(function (Channel $channel) use ($queue) {
+                    $channel->queueDeclare($queue);
+
+                    return $channel;
+                });
     }
 }
