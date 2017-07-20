@@ -12,9 +12,9 @@ use CC\Tracker\Infrastructure\RabbitMessageQueue;
 use CC\Tracker\Environments;
 
 const AERYS_OPTIONS = [
-    'maxConnections' => 2048,
+    'maxConnections'   => 2048,
     'connectionsPerIP' => 2048,
-    "user" => "app",
+    "user"             => "app",
 ];
 
 $rabbitMQConnectionParameters = [
