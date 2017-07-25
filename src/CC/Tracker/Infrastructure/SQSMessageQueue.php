@@ -21,6 +21,9 @@ class SQSMessageQueue implements MessageQueue
         $this->queueUrl                = $queueUrl;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function send(Message $message)
     {
         $guzzlePromise = $this->client->sendMessageAsync([

@@ -28,6 +28,9 @@ final class RabbitMessageQueue implements MessageQueue
         $this->queue   = $queue;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function send(Message $message): PromiseInterface
     {
         return $this->connect($this->queue)
