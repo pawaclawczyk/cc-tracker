@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\CC\Tracker\Infrastructure;
 
-use CC\Tracker\Environments;
 use CC\Tracker\Infrastructure\RabbitMessageQueue;
 use CC\Tracker\Model\Message;
 use CC\Tracker\Model\MessageQueue;
@@ -47,9 +46,9 @@ class RabbitMessageQueueTest extends TestCase
         parent::setUp();
 
         $this->params = [
-            'host'     => \getenv(Environments::CC_TRACKER_MQ_HOST) ?: 'rabbit',
-            'user'     => \getenv(Environments::CC_TRACKER_MQ_USER) ?: 'rabbit',
-            'password' => \getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: 'rabbit.123',
+            'host'     => 'rabbit',
+            'user'     => 'rabbit',
+            'password' => 'rabbit.123',
         ];
 
         $this->queue = \uniqid('channel_');
@@ -60,8 +59,11 @@ class RabbitMessageQueueTest extends TestCase
 
     protected function tearDown()
     {
+        $this->reader->delete($this->queue);
+
         $this->messageQueue = null;
         $this->reader       = null;
+        $this->queue        = null;
 
         parent::tearDown();
     }

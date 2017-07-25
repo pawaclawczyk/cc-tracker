@@ -15,19 +15,34 @@ class RabbitMessageQueueReader
     public function __construct(array $params)
     {
         $this->client = new Client($params);
+        $this->client->connect();
+
+        $this->channel = $this->client->channel();
+    }
+
+    public function purge(string $queue): bool
+    {
+        $this->channel->queueDeclare($queue, false, false, false, false, true);
+
+        return $this->channel->queuePurge($queue, true);
+    }
+
+    public function delete(string $queue): bool
+    {
+        return $this->channel->queueDelete($queue, false, false, true);
     }
 
     public function readOneFrom(string $queue): Message
     {
-        $this->client->connect();
+        $message = $this->channel->get($queue);
 
-        $channel = $this->client->channel();
-        $message = $channel->get($queue);
-
-        $channel->ack($message);
-
-        $this->client->disconnect();
+        $this->channel->ack($message);
 
         return Message::fromString($message->content);
+    }
+
+    public function __destruct()
+    {
+        $this->client->disconnect();
     }
 }

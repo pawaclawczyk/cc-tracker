@@ -13,8 +13,13 @@ use React\Promise\PromiseInterface;
 
 final class RabbitMessageQueue implements MessageQueue
 {
+    /** @var array */
     private $options;
+
+    /** @var string */
     private $queue;
+
+    /** @var PromiseInterface */
     private $channel;
 
     public function __construct(array $options, string $queue)
@@ -26,8 +31,8 @@ final class RabbitMessageQueue implements MessageQueue
     public function send(Message $message): PromiseInterface
     {
         return $this->connect($this->queue)
-            ->then(function (Channel $channel) use ($message, $queue) {
-                return $channel->publish((string) $message, [], '', $queue);
+            ->then(function (Channel $channel) use ($message) {
+                return $channel->publish((string) $message, [], '', $this->queue);
             });
     }
 
@@ -48,5 +53,12 @@ final class RabbitMessageQueue implements MessageQueue
 
                     return $channel;
                 });
+    }
+
+    public function __destruct()
+    {
+        $this->channel->then(function (Channel $channel) {
+            $channel->getClient()->disconnect();
+        });
     }
 }

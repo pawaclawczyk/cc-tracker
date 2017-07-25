@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\CC\Tracker\Controller;
 
-use CC\Tracker\Environments;
 use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
 use Tests\CC\Tracker\Infrastructure\Helper\AppRunner;
@@ -43,7 +42,7 @@ class PixelControllerTest extends TestCase
 
         \sleep(1);
 
-        $message = $this->reader->readOneFrom($this->queue);
+        $message = $this->reader->readOneFrom("tracker");
 
         $data   = \json_decode((string) $message, true);
         $client = $data['user-agent'][0];
@@ -55,29 +54,16 @@ class PixelControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->queue = \uniqid('queue_');
-
-        $this->appRunner = (new AppRunner())->start([
-            Environments::CC_TRACKER_HOST_PORT  => \getenv(Environments::CC_TRACKER_HOST_PORT) ?: 9000,
-            Environments::CC_TRACKER_QUEUE_NAME => $this->queue,
-            Environments::CC_TRACKER_MQ_HOST    => \getenv(Environments::CC_TRACKER_MQ_HOST) ?: 'rabbit',
-        ]);
-
         $this->reader = new RabbitMessageQueueReader([
-            'host'     => \getenv(Environments::CC_TRACKER_MQ_HOST) ?: 'rabbit',
-            'user'     => \getenv(Environments::CC_TRACKER_MQ_USER) ?: 'rabbit',
-            'password' => \getenv(Environments::CC_TRACKER_MQ_PASSWORD) ?: 'rabbit.123',
+            'host'     => 'rabbit',
+            'user'     => 'rabbit',
+            'password' => 'rabbit.123',
         ]);
+
+        $this->reader->purge('tracker');
 
         $this->client = new Client([
-            'base_uri' => \sprintf('http://127.0.0.1:%d', \getenv(Environments::CC_TRACKER_HOST_PORT) ?: 9000),
+            'base_uri' => 'http://127.0.0.1:9000/',
         ]);
-    }
-
-    protected function tearDown()
-    {
-        $this->appRunner->stop();
-
-        parent::tearDown();
     }
 }

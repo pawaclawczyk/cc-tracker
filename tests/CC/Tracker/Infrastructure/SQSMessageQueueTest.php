@@ -15,6 +15,8 @@ class SQSMessageQueueTest extends TestCase
     /** @test */
     public function it_works()
     {
+        $this->markTestSkipped('You have to solve passing credentials first!');
+
         $mq = new SQSMessageQueue(
             [
                 "region"  => "eu-west-1",
