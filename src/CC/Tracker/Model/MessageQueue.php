@@ -11,6 +11,7 @@ interface MessageQueue
 {
     /**
      * @param Message $message
+     *
      * @return bool|Promise|PromiseInterface
      */
     public function send(Message $message);
