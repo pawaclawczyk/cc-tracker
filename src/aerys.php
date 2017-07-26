@@ -12,11 +12,7 @@ use CC\Tracker\Infrastructure\RabbitMessageQueue;
 
 $config = require __DIR__ . "/../config/tracker/Config.php";
 
-const AERYS_OPTIONS = [
-    'maxConnections'   => 2048,
-    'connectionsPerIP' => 2048,
-    "user"             => "app",
-];
+\define('AERYS_OPTIONS', $config["aerys"]["options"]);
 
 $pixelLoader  = new FilePixelLoader($config["pixel"]);
 $messageQueue = new RabbitMessageQueue($config["queue"]["connection"], $config["queue"]["name"]);
@@ -24,8 +20,10 @@ $messageQueue = new RabbitMessageQueue($config["queue"]["connection"], $config["
 $router = router()
     ->get('/pixel.gif', new PixelController($pixelLoader, $messageQueue));
 
+["address" => $address, "port" => $port] = $config["aerys"]["host"];
+
 $host = (new Host())
-    ->expose($config["host"]["address"], (int) $config["host"]["port"])
+    ->expose($address, (int) $port)
     ->use($router);
 
 return $host;

@@ -10,9 +10,16 @@ return [
             "host"     => getenv("CC_TRACKER_MQ_HOST") ?: "rabbit",
         ],
     ],
-    "host" => [
-        "address" => "*",
-        "port" => getenv("CC_TRACKER_HOST_PORT") ?: "9000",
+    "aerys" => [
+        "options" => [
+            "maxConnections"   => 2048,
+            "connectionsPerIP" => 2048,
+            "user"             => "app",
+        ],
+        "host" => [
+            "address" => "*",
+            "port" => getenv("CC_TRACKER_HOST_PORT") ?: "9000",
+        ],
     ],
     "pixel" => __DIR__ . "/../../var/static/pixel.gif",
 ];

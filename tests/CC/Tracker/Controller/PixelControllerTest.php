@@ -6,25 +6,18 @@ namespace Tests\CC\Tracker\Controller;
 
 use GuzzleHttp\Client;
 use PHPUnit\Framework\TestCase;
-use Tests\CC\Tracker\Infrastructure\Helper\AppRunner;
 use Tests\CC\Tracker\Infrastructure\Helper\RabbitMessageQueueReader;
 
 class PixelControllerTest extends TestCase
 {
-    const HOST_PORT   = 12345;
-    const LOCALHOST   = '127.0.0.1';
-
-    /** @var string */
-    private $queue;
-
-    /** @var AppRunner */
-    private $appRunner;
-
     /** @var RabbitMessageQueueReader */
     private $reader;
 
     /** @var Client */
     private $client;
+
+    /** @var string */
+    private $queue;
 
     /** @test */
     public function it_returns_pixel()
@@ -38,9 +31,11 @@ class PixelControllerTest extends TestCase
     /** @test */
     public function it_sends_message_to_queue()
     {
-        $this->client->get('/pixel.gif');
+        $this->reader->purge($this->queue);
 
-        \sleep(1);
+        \usleep(1000);
+
+        $this->client->get('/pixel.gif');
 
         $message = $this->reader->readOneFrom("tracker");
 
@@ -54,16 +49,24 @@ class PixelControllerTest extends TestCase
     {
         parent::setUp();
 
-        $this->reader = new RabbitMessageQueueReader([
-            'host'     => 'rabbit',
-            'user'     => 'rabbit',
-            'password' => 'rabbit.123',
-        ]);
+        $config = require __DIR__ . "/../../../../config/tracker/Config.php";
 
-        $this->reader->purge('tracker');
+        [
+            "queue" => [
+                "name"       => $this->queue,
+                "connection" => $params,
+                ],
+            "aerys" => [
+                "host" => [
+                    "port" => $port,
+                    ],
+            ]
+        ] = $config;
+
+        $this->reader = new RabbitMessageQueueReader($params);
 
         $this->client = new Client([
-            'base_uri' => 'http://127.0.0.1:9000/',
+            'base_uri' => "http://127.0.0.1:" . $port,
         ]);
     }
 }

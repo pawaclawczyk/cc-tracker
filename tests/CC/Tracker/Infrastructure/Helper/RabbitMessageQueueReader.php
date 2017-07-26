@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\CC\Tracker\Infrastructure\Helper;
 
+use Bunny\Channel;
 use Bunny\Client;
 use CC\Tracker\Model\Message;
 
 class RabbitMessageQueueReader
 {
     private $client;
+
+    /** @var Channel */
     private $channel;
 
     public function __construct(array $params)
@@ -22,7 +25,7 @@ class RabbitMessageQueueReader
 
     public function purge(string $queue): bool
     {
-        $this->channel->queueDeclare($queue, false, false, false, false, true);
+        $this->channel->queueDeclare($queue);
 
         return $this->channel->queuePurge($queue, true);
     }
