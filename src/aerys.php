@@ -20,7 +20,7 @@ $messageQueue = new RabbitMessageQueue($config["queue"]["connection"], $config["
 $router = router()
     ->get('/pixel.gif', new PixelController($pixelLoader, $messageQueue));
 
-["address" => $address, "port" => $port] = $config["aerys"]["host"];
+list("address" => $address, "port" => $port) = $config["aerys"]["host"];
 
 $host = (new Host())
     ->expose($address, (int) $port)
