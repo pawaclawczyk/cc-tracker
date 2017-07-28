@@ -23,6 +23,7 @@ services:
     command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug"
     links:
       - rabbit
+      - elasticmq
 #  processor:
 #    build:
 #      context: .
@@ -48,6 +49,13 @@ services:
       - "25672:25672"
       - "15671:15671"
       - "15672:15672" # GUI
+  elasticmq:
+    image: s12v/elasticmq
+    container_name: cc-tracker-elasticmq
+    ports:
+      - "9324:9324"
+    volumes:
+      - ./config/tracker/elasticmq.conf:/etc/elasticmq/elasticmq.conf
 #  mysql:
 #    image: "mysql"
 #    container_name: "mysql"
