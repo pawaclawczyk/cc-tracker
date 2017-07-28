@@ -10,6 +10,7 @@ use CC\Tracker\Controller\PixelController;
 use CC\Tracker\Infrastructure\FilePixelLoader;
 use CC\Tracker\Infrastructure\MessageQueue\ClientFactory;
 use CC\Tracker\Configuration\Configuration;
+use CC\Tracker\Infrastructure\LogStatistics;
 
 $configuration = Configuration::load();
 
@@ -26,6 +27,7 @@ $router = router()
 
 $host = (new Host())
     ->expose($address, (int) $port)
-    ->use($router);
+    ->use($router)
+    ->use(new LogStatistics());
 
 return $host;
