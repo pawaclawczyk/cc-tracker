@@ -60,7 +60,7 @@ final class RabbitMessageQueue implements MessageQueue
 
     public function __destruct()
     {
-        $this->channel->then(function (Channel $channel) {
+        $this->channel && $this->channel->then(function (Channel $channel) {
             $channel->getClient()->disconnect();
         });
     }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\CC\Tracker\Infrastructure;
 
-use CC\Tracker\Infrastructure\RabbitMessageQueue;
+use CC\Tracker\Configuration\Configuration;
+use CC\Tracker\Infrastructure\MessageQueue\ClientFactory;
+use CC\Tracker\Infrastructure\MessageQueue\MessageQueueClients;
 use CC\Tracker\Model\Message;
 use CC\Tracker\Model\MessageQueue;
 use PHPUnit\Framework\TestCase;
@@ -13,9 +15,6 @@ use Tests\CC\Tracker\Infrastructure\Helper\RabbitMessageQueueReader;
 
 class RabbitMessageQueueTest extends TestCase
 {
-    /** @var array */
-    private $params;
-
     /** @var string */
     private $queue;
 
@@ -45,16 +44,14 @@ class RabbitMessageQueueTest extends TestCase
     {
         parent::setUp();
 
-        $this->params = [
-            'host'     => 'rabbit',
-            'user'     => 'rabbit',
-            'password' => 'rabbit.123',
-        ];
+        $configuration = Configuration::load();
 
         $this->queue = \uniqid('channel_');
 
-        $this->messageQueue = new RabbitMessageQueue($this->params, $this->queue);
-        $this->reader = new RabbitMessageQueueReader($this->params);
+        $factory = new ClientFactory($configuration["message_queue"]);
+
+        $this->messageQueue = $factory->custom(MessageQueueClients::RABBIT_MQ, $this->queue);
+        $this->reader = new RabbitMessageQueueReader($configuration["message_queue"]["configs"][MessageQueueClients::RABBIT_MQ]);
     }
 
     protected function tearDown()

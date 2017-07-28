@@ -8,19 +8,21 @@ use Aerys\Host;
 use function Aerys\router;
 use CC\Tracker\Controller\PixelController;
 use CC\Tracker\Infrastructure\FilePixelLoader;
-use CC\Tracker\Infrastructure\RabbitMessageQueue;
+use CC\Tracker\Infrastructure\MessageQueue\ClientFactory;
+use CC\Tracker\Configuration\Configuration;
 
-$config = require __DIR__ . "/../config/tracker/Config.php";
+$configuration = Configuration::load();
 
-\define('AERYS_OPTIONS', $config["aerys"]["options"]);
+\define('AERYS_OPTIONS', $configuration["aerys"]["options"]);
 
-$pixelLoader = new FilePixelLoader($config["pixel"]);
-$messageQueue = new RabbitMessageQueue($config["queue"]["connection"], $config["queue"]["name"]);
+$messageQueueFactory = new ClientFactory($configuration["message_queue"]);
+$pixelLoader = new FilePixelLoader($configuration["pixel"]);
+$messageQueue = $messageQueueFactory->default();
 
 $router = router()
     ->get('/pixel.gif', new PixelController($pixelLoader, $messageQueue));
 
-list("address" => $address, "port" => $port) = $config["aerys"]["host"];
+["address" => $address, "port" => $port] = $configuration["aerys"]["host"];
 
 $host = (new Host())
     ->expose($address, (int) $port)

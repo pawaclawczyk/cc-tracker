@@ -48,7 +48,7 @@ return PhpCsFixer\Config::create()
         ],
         'linebreak_after_opening_tag' => true,
         'list_syntax' => [
-            'syntax' => 'long', // requires PHP 7.1
+            'syntax' => 'short',
         ],
         'lowercase_cast' => true,
         'magic_constant_casing' => true,

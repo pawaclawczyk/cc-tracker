@@ -24,6 +24,9 @@ services:
     links:
       - rabbit
       - elasticmq
+    depends_on:
+      - rabbit
+      - elasticmq
 #  processor:
 #    build:
 #      context: .
