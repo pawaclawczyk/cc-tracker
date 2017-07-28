@@ -14,7 +14,7 @@ $config = require __DIR__ . "/../config/tracker/Config.php";
 
 \define('AERYS_OPTIONS', $config["aerys"]["options"]);
 
-$pixelLoader  = new FilePixelLoader($config["pixel"]);
+$pixelLoader = new FilePixelLoader($config["pixel"]);
 $messageQueue = new RabbitMessageQueue($config["queue"]["connection"], $config["queue"]["name"]);
 
 $router = router()

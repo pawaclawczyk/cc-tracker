@@ -39,7 +39,7 @@ final class PixelController
 
     public function __construct(PixelLoader $pixelLoader, MessageQueue $messageQueue)
     {
-        $this->pixelLoader  = $pixelLoader;
+        $this->pixelLoader = $pixelLoader;
         $this->messageQueue = $messageQueue;
     }
 }

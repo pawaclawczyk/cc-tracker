@@ -25,7 +25,7 @@ final class RabbitMessageQueue implements MessageQueue
     public function __construct(array $options, string $queue)
     {
         $this->options = $options;
-        $this->queue   = $queue;
+        $this->queue = $queue;
     }
 
     /**

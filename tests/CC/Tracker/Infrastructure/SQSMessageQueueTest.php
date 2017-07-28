@@ -15,8 +15,8 @@ use PHPUnit\Framework\TestCase;
 class SQSMessageQueueTest extends TestCase
 {
     private const AMAZON_SQS_ENDPOINT = "https://sqs.eu-west-1.amazonaws.com";
-    private const ELASTICMQ_ENDPOINT  = "http://elasticmq:9324";
-    private const QUEUE_NAME          = "cc-tracker";
+    private const ELASTICMQ_ENDPOINT = "http://elasticmq:9324";
+    private const QUEUE_NAME = "cc-tracker";
 
     /**
      * @param string $endpoint

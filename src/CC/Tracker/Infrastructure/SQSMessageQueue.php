@@ -19,9 +19,9 @@ class SQSMessageQueue implements MessageQueue
 
     public function __construct(array $connectionConfiguration, string $queueName)
     {
-        $this->client   = $client   = new SqsClient($connectionConfiguration);
+        $this->client = $client = new SqsClient($connectionConfiguration);
         $this->queueUrl = $client->getQueueUrl(["QueueName" => $queueName])["QueueUrl"];
-        $this->buffer   = $buffer   = new SQSMessageBuffer();
+        $this->buffer = $buffer = new SQSMessageBuffer();
 
         $this->repeatWatcher = Loop::repeat(100, $this->sendAnyWatcher($this->queueUrl));
     }

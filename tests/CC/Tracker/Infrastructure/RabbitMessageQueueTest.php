@@ -31,7 +31,7 @@ class RabbitMessageQueueTest extends TestCase
         $messageToSend = Message::fromString('Hello world!');
 
         $promise = $this->messageQueue->send($messageToSend);
-        $result  = wait($promise);
+        $result = wait($promise);
 
         $this->assertTrue($result);
 
@@ -54,7 +54,7 @@ class RabbitMessageQueueTest extends TestCase
         $this->queue = \uniqid('channel_');
 
         $this->messageQueue = new RabbitMessageQueue($this->params, $this->queue);
-        $this->reader       = new RabbitMessageQueueReader($this->params);
+        $this->reader = new RabbitMessageQueueReader($this->params);
     }
 
     protected function tearDown()
@@ -62,8 +62,8 @@ class RabbitMessageQueueTest extends TestCase
         $this->reader->delete($this->queue);
 
         $this->messageQueue = null;
-        $this->reader       = null;
-        $this->queue        = null;
+        $this->reader = null;
+        $this->queue = null;
 
         parent::tearDown();
     }

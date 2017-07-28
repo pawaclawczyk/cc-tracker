@@ -39,7 +39,7 @@ class PixelControllerTest extends TestCase
 
         $message = $this->reader->readOneFrom("tracker");
 
-        $data   = \json_decode((string) $message, true);
+        $data = \json_decode((string) $message, true);
         $client = $data['user-agent'][0];
 
         $this->assertContains('GuzzleHttp', $client);
