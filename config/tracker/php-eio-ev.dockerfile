@@ -24,10 +24,11 @@ RUN cd /tmp && \
 
 
 RUN docker-php-ext-install opcache pcntl pdo_mysql sysvsem sysvshm zip && \
+    pecl install ds && \
     pecl install eio && \
     pecl install ev && \
     pecl install libsodium && \
-    docker-php-ext-enable eio ev sodium
+    docker-php-ext-enable ds eio ev sodium
 
 # uopz 5.0.1 is not compatible with PHP 7.1 yet see: https://github.com/krakjoe/uopz/issues/57
 #RUN pecl install uopz xdebug && \
