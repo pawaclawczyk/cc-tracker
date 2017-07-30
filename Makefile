@@ -1,10 +1,14 @@
 AWS_CONFIG_DIR     = config/aws
-AMI_CONFIG         = $(AWS_CONFIG_DIR)/tracker_ami.json
+AMI_CONFIG         = $(AWS_CONFIG_DIR)/ami.json
 
-AWS_INSTANCE_TYPE ?= t2.micro
+AWS_INSTANCE_TYPE ?= c4.xlarge
 
-PACKER_FLAGS       = -var 'aws_access_key=$(AWS_ACCESS_KEY_ID)' -var 'aws_secret_key=$(AWS_SECRET_ACCESS_KEY)'
-TERRAFORM_FLAGS    = -input=false -var 'aws_access_key=$(AWS_ACCESS_KEY_ID)' -var 'aws_secret_key=$(AWS_SECRET_ACCESS_KEY)' -var 'instance_type=$(AWS_INSTANCE_TYPE)'
+PACKER_FLAGS       = -var 'aws_access_key=$(AWS_ACCESS_KEY_ID)' \
+                     -var 'aws_secret_key=$(AWS_SECRET_ACCESS_KEY)'
+TERRAFORM_FLAGS    = -input=false \
+                     -var 'aws_access_key=$(AWS_ACCESS_KEY_ID)' \
+                     -var 'aws_secret_key=$(AWS_SECRET_ACCESS_KEY)' \
+                     -var 'instance_type=$(AWS_INSTANCE_TYPE)'
 
 .PHONY: build_ami
 build_ami:
