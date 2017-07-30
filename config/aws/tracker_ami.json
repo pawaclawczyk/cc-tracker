@@ -25,18 +25,20 @@
     {
       "type": "shell",
       "inline": [
-        "sleep 30",
+        "echo \"* soft nofile 500000\" | sudo tee --append /etc/security/limits.conf",
+        "echo \"* hard nofile 500000\" | sudo tee --append /etc/security/limits.conf",
+        "echo 500000 | sudo tee /proc/sys/fs/file-max",
+        "echo \"fs.file-max=500000\" | sudo tee --append /etc/sysctl.conf",
         "sudo add-apt-repository ppa:ondrej/php",
         "sudo apt-get update",
-        "sudo apt-get install -y php7.1 php7.1-dev php7.1-mbstring",
-        "sudo pecl install eio",
-        "sudo pecl install ev",
+        "sudo apt-get upgrade --yes",
+        "sudo apt-get install --yes htop php7.1 php7.1-dev php7.1-mbstring php7.1-zip composer",
+        "sudo pecl install ds eio ev",
         "sudo sh -c 'printf \"[eio]\nextension=eio.so\n\" > /etc/php/7.1/mods-available/eio.ini'",
         "sudo sh -c 'printf \"[ev]\nextension=ev.so\n\" > /etc/php/7.1/mods-available/ev.ini'",
-        "sudo phpenmod eio",
-        "sudo phpenmod ev",
+        "sudo sh -c 'printf \"[ds]\nextension=ds.so\n\" > /etc/php/7.1/mods-available/ds.ini'",
+        "sudo phpenmod ds eio ev",
         "git clone https://github.com/pawaclawczyk/cc-tracker.git tracker",
-        "sudo apt-get -y install composer",
         "cd tracker && composer install"
       ]
   }]

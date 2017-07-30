@@ -79,15 +79,8 @@ resource "aws_instance" "tracker" {
 
   security_groups = ["tracker"]
 
-  provisioner "remote-exec" {
-    connection {
-      user = "${var.ssh_user}"
-      private_key = "${file(var.ssh_private_key)}"
-    }
-
-    inline = [
-      "~/tracker/vendor/bin/aerys --config ~/tracker/src/aerys.php -w 8 &"
-    ]
+  tags {
+    Name = "tracker"
   }
 }
 

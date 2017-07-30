@@ -20,6 +20,7 @@ services:
     environment:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
+      - CC_TRACKER_MQ_CLIENT
     command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug"
     links:
       - rabbit
