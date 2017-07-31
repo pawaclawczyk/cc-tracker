@@ -26,7 +26,7 @@ final class PixelController
 
         $message = $this->prepareData($request);
 
-        $this->messageQueue->send($message);
+        yield $this->messageQueue->send($message);
     }
 
     private function prepareData(Request $request): Message
