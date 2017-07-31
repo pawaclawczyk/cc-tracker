@@ -12,18 +12,27 @@ use CC\Tracker\Infrastructure\MessageQueue\ClientFactory;
 use CC\Tracker\Configuration\Configuration;
 use CC\Tracker\Controller\StatusController;
 use CC\Tracker\Infrastructure\Status\Collector;
+use CC\Tracker\Infrastructure\Status\Time\Measurements;
+use CC\Tracker\Infrastructure\Status\Time\AverageTimeCollector;
+use CC\Tracker\Controller\TimeMeasuringController;
 
 $configuration = Configuration::load();
 
 \define('AERYS_OPTIONS', $configuration["aerys"]["options"]);
 
 $messageQueueFactory = new ClientFactory($configuration["message_queue"]);
-$pixelLoader = new FilePixelLoader($configuration["pixel"]);
 $messageQueue = $messageQueueFactory->default();
-$collector = new Collector();
+
+$pixelLoader = new FilePixelLoader($configuration["pixel"]);
+
+$pixelController = new PixelController($pixelLoader, $messageQueue);
+
+$measurements = new Measurements();
+$timeCollector = new AverageTimeCollector($measurements);
+$collector = new Collector($timeCollector);
 
 $router = router()
-    ->get('/pixel.gif', new PixelController($pixelLoader, $messageQueue))
+    ->get("/pixel.gif", new TimeMeasuringController($pixelController, $measurements))
     ->get("/status", new StatusController($collector))
 ;
 
