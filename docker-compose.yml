@@ -28,18 +28,19 @@ services:
     depends_on:
       - rabbit
       - elasticmq
-#  processor:
-#    build:
-#      context: .
-#      dockerfile: config/tracker/php-eio-ev.dockerfile
-#    container_name: processor
-#    image: processor
-#    volumes:
-#      - .:/app
-#    command: "php /app/src/CC/Processor/app.php"
-#    links:
-#      - rabbit
-#      - mysql
+  processor:
+    build:
+      context: .
+      dockerfile: config/processor/Dockerfile
+    container_name: processor
+    image: processor
+    volumes:
+      - .:/app
+    command: "php /app/src/CC/Processor/app.php"
+    links:
+      - rabbit
+      - elasticmq
+      - mysql
   rabbit:
     image: rabbitmq:management
     container_name: cc-tracker-rabbit
@@ -60,13 +61,13 @@ services:
       - "9324:9324"
     volumes:
       - ./config/tracker/elasticmq.conf:/etc/elasticmq/elasticmq.conf
-#  mysql:
-#    image: "mysql"
-#    container_name: "mysql"
-#    environment:
-#      MYSQL_ROOT_PASSWORD: mysql.123
-#      MYSQL_DATABASE: tracker
-#      MYSQL_USER: tracker
-#      MYSQL_PASSWORD: tracker.123
-#    ports:
-#      - "3306:3306"
+  mysql:
+    image: "mysql"
+    container_name: "mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql.123
+      MYSQL_DATABASE: tracker
+      MYSQL_USER: tracker
+      MYSQL_PASSWORD: tracker.123
+    ports:
+      - "3306:3306"

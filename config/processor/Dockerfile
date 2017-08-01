@@ -21,7 +21,6 @@ RUN cd /tmp && \
     make install && \
     cd /tmp && rm -rf ${libsodium}
 
-
 RUN docker-php-ext-install opcache pcntl pdo_mysql sysvsem sysvshm zip && \
     pecl install ds && \
     pecl install eio && \
@@ -29,11 +28,8 @@ RUN docker-php-ext-install opcache pcntl pdo_mysql sysvsem sysvshm zip && \
     pecl install libsodium && \
     docker-php-ext-enable ds eio ev sodium
 
-# uopz 5.0.1 is not compatible with PHP 7.1 yet see: https://github.com/krakjoe/uopz/issues/57
-#RUN pecl install uopz xdebug && \
-#    docker-php-ext-enable uopz xdebug
-
-COPY config/tracker/php.ini /usr/local/etc/php/php.ini
+ADD config/processor/geolite2_install.sh /tmp/geolite2_install.sh
+RUN chmod +x /tmp/geolite2_install.sh && /tmp/geolite2_install.sh /app/var
 
 RUN useradd -ms /bin/bash app
 WORKDIR /app
