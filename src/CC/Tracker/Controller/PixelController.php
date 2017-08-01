@@ -33,7 +33,8 @@ final class PixelController
     {
         return Message::fromString(\json_encode(\array_merge(
             $request->getAllHeaders(),
-            $request->getAllParams()
+            $request->getAllParams(),
+            $request->getConnectionInfo()
         )));
     }
 

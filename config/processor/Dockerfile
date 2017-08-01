@@ -4,6 +4,8 @@ RUN apt-get update && \
     apt-get install -y \
         git \
         htop \
+        netcat \
+        telnet \
         wget \
         zlib1g-dev
 

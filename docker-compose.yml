@@ -71,3 +71,4 @@ services:
       MYSQL_PASSWORD: tracker.123
     ports:
       - "3306:3306"
+# dockercloud/haproxy
