@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace CC\Processor;
 
+const UNKNOWN = "Unknown";
 require_once __DIR__ . '/../../../vendor/autoload.php';
 
 use function Amp\asyncCoroutine;
@@ -59,7 +60,7 @@ $ip = function (array $data): string {
 
 $country = function (array $data) use ($ip, $geoIP): string {
     try {
-        return $geoIP->country($ip($data))->country->name;
+        return $geoIP->country($ip($data))->country->name ?? UNKNOWN;
     } catch (AddressNotFoundException $notFound) {
     }
 

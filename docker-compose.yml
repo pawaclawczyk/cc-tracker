@@ -1,12 +1,12 @@
 version: "3.3"
 services:
-  client:
-    image: nginx
-    container_name: cc-tracker-client
-    volumes:
-      - ./var/static:/usr/share/nginx/html:ro
-    ports:
-      - "8080:80"
+#  client:
+#    image: nginx
+#    container_name: cc-tracker-client
+#    volumes:
+#      - ./var/static:/usr/share/nginx/html:ro
+#    ports:
+#      - "8080:80"
   tracker:
     build:
       context: .
@@ -21,13 +21,13 @@ services:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
       - CC_TRACKER_MQ_CLIENT
-    command: "/app/vendor/bin/aerys --config /app/src/aerys.php --debug"
+    command: "/app/vendor/bin/aerys --config /app/src/aerys.php"
     links:
       - rabbit
-      - elasticmq
+#      - elasticmq
     depends_on:
       - rabbit
-      - elasticmq
+#      - elasticmq
   processor:
     build:
       context: .
@@ -39,7 +39,7 @@ services:
     command: "php /app/src/CC/Processor/app.php"
     links:
       - rabbit
-      - elasticmq
+#      - elasticmq
       - mysql
   rabbit:
     image: rabbitmq:management
@@ -54,13 +54,13 @@ services:
       - "25672:25672"
       - "15671:15671"
       - "15672:15672" # GUI
-  elasticmq:
-    image: s12v/elasticmq
-    container_name: cc-tracker-elasticmq
-    ports:
-      - "9324:9324"
-    volumes:
-      - ./config/tracker/elasticmq.conf:/etc/elasticmq/elasticmq.conf
+#  elasticmq:
+#    image: s12v/elasticmq
+#    container_name: cc-tracker-elasticmq
+#    ports:
+#      - "9324:9324"
+#    volumes:
+#      - ./config/tracker/elasticmq.conf:/etc/elasticmq/elasticmq.conf
   mysql:
     image: "mysql"
     container_name: "mysql"
