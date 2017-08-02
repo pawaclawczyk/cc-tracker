@@ -14,6 +14,8 @@ use Bunny\Async\Client;
 use Bunny\Channel;
 use Bunny\Message;
 use Amp\ReactAdapter\ReactAdapter;
+use DeviceDetector\Cache\StaticCache;
+use DeviceDetector\DeviceDetector;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\DriverManager;
 use GeoIp2\Database\Reader;
@@ -34,13 +36,19 @@ $connection = DriverManager::getConnection([
     'dbname'   => 'tracker',
 ]);
 
-
-try { $connection->connect(); } catch (\Throwable $error) {}
+try {
+    $connection->connect();
+} catch (\Throwable $error) {
+}
 
 while (!$connection->isConnected()) {
-    print "Waiting for database...\n";
-    sleep(2);
-    try { $connection->connect(); } catch (\Throwable $error) {}
+    echo "Waiting for database...\n";
+    \sleep(2);
+
+    try {
+        $connection->connect();
+    } catch (\Throwable $error) {
+    }
 }
 
 $geoIP = new Reader("/var/local/geolite2/GeoLite2-Country.mmdb");
@@ -58,6 +66,20 @@ $country = function (array $data) use ($ip, $geoIP): string {
     return "not-found";
 };
 
+$deviceDetectorCache = new StaticCache();
+$deviceDetector = new DeviceDetector();
+$deviceDetector->setCache($deviceDetectorCache);
+
+$osAndBrowser = function (string $userAgent) use ($deviceDetector) {
+    $deviceDetector->setUserAgent($userAgent);
+    $deviceDetector->parse();
+
+    return [
+        $deviceDetector->getOs("name"),
+        $deviceDetector->getClient("name"),
+    ];
+};
+
 $counter = 0;
 
 $server = listen("127.0.0.1:9898");
@@ -72,7 +94,7 @@ Loop::defer(function () use ($server, $handler) {
     }
 });
 
-Loop::run(function () use ($options, $connection, $country, &$counter) {
+Loop::run(function () use ($options, $connection, $country, $osAndBrowser, &$counter) {
     (new Client(ReactAdapter::get(), $options))
         ->connect()
         ->then(function (Client $client) {
@@ -88,22 +110,26 @@ Loop::run(function () use ($options, $connection, $country, &$counter) {
                 return $channel;
             });
         })
-        ->then(function (Channel $channel) use ($connection, $country, &$counter) {
+        ->then(function (Channel $channel) use ($connection, $country, $osAndBrowser, &$counter) {
             $channel->consume(
-                function (Message $message, Channel $channel, Client $client) use ($connection, $country, &$counter) {
+                function (Message $message, Channel $channel, Client $client) use ($connection, $country, $osAndBrowser, &$counter) {
                     $data = \json_decode($message->content, true);
+
+                    [$os, $browser] = $osAndBrowser($data["user-agent"][0]);
 
                     try {
                         $connection
                             ->executeQuery(
-                                'INSERT INTO raw_requests VALUES(null, :content, :country)',
+                                'INSERT INTO raw_requests VALUES(null, :content, :country, :os, :browser)',
                                 [
-                                    'content' => $message->content,
-                                    'country' => $country($data),
+                                    "content" => $message->content,
+                                    "country" => $country($data),
+                                    "os"      => $os,
+                                    "browser" => $browser,
                                 ]
                             );
 
-                        $counter++;
+                        ++$counter;
 
                         $channel->ack($message);
                     } catch (DBALException $exception) {
