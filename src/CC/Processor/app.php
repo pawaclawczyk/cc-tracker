@@ -15,6 +15,9 @@ use Bunny\Async\Client;
 use Bunny\Channel;
 use Bunny\Message;
 use Amp\ReactAdapter\ReactAdapter;
+use CC\Shared\AverageExecution;
+use CC\Shared\Memoize;
+use DeviceDetector\Cache\Cache;
 use DeviceDetector\Cache\StaticCache;
 use DeviceDetector\DeviceDetector;
 use Doctrine\DBAL\DBALException;
@@ -52,26 +55,63 @@ while (!$connection->isConnected()) {
     }
 }
 
-$geoIP = new Reader("/var/local/geolite2/GeoLite2-Country.mmdb");
+$countingStaticCache = new class() implements Cache, \Countable {
+    protected static $cache = [];
+    protected static $hits = 0;
 
-$ip = function (array $data): string {
-    return $data["x-forwarded-for"][0] ?? $data["client_addr"];
-};
+    public function fetch($id)
+    {
+        if ($this->contains($id)) {
+            ++self::$hits;
 
-$country = function (array $data) use ($ip, $geoIP): string {
-    try {
-        return $geoIP->country($ip($data))->country->name ?? UNKNOWN;
-    } catch (AddressNotFoundException $notFound) {
+            return self::$cache[$id];
+        }
+
+        return false;
     }
 
-    return "not-found";
+    public function contains($id)
+    {
+        return isset(self::$cache[$id]) || \array_key_exists($id, self::$cache);
+    }
+
+    public function save($id, $data, $lifeTime = 0)
+    {
+        self::$cache[$id] = $data;
+
+        return true;
+    }
+
+    public function delete($id)
+    {
+        unset(self::$cache[$id]);
+
+        return true;
+    }
+
+    public function flushAll()
+    {
+        self::$cache = [];
+
+        return true;
+    }
+
+    public function count()
+    {
+        return \count(self::$cache);
+    }
+
+    public function hits()
+    {
+        return self::$hits;
+    }
 };
 
 $deviceDetectorCache = new StaticCache();
 $deviceDetector = new DeviceDetector();
-$deviceDetector->setCache($deviceDetectorCache);
+$deviceDetector->setCache($countingStaticCache);
 
-$osAndBrowser = function (string $userAgent) use ($deviceDetector) {
+$_osAndBrowser = function (string $userAgent) use ($deviceDetector) {
     $deviceDetector->setUserAgent($userAgent);
     $deviceDetector->parse();
 
@@ -81,12 +121,51 @@ $osAndBrowser = function (string $userAgent) use ($deviceDetector) {
     ];
 };
 
+$osAndBrowser = AverageExecution::lift(Memoize::lift($_osAndBrowser));
+
+$geoIP = new Reader("/var/local/geolite2/GeoLite2-Country.mmdb");
+
+$ip = function (array $data): string {
+    return $data["x-forwarded-for"][0] ?? $data["client_addr"];
+};
+
+$_country = function (array $data) use ($ip, $geoIP): string {
+    $result = null;
+
+    try {
+        $result = $geoIP->country($ip($data))->country->name ?? UNKNOWN;
+    } catch (AddressNotFoundException $notFound) {
+    }
+
+    return $result ?? "not-found";
+};
+
+$country = AverageExecution::lift($_country);
+
 $counter = 0;
 
 $server = listen("127.0.0.1:9898");
 
-$handler = asyncCoroutine(function (ServerSocket $socket) use (&$counter) {
-    yield $socket->end("I'm alive! Processed: $counter items.\n");
+$handler = asyncCoroutine(function (ServerSocket $socket) use (&$counter, $countingStaticCache, $osAndBrowser, $country) {
+    $stats = [
+        "memory" => [
+            "usage" => \round(\memory_get_usage() / 1024, 2) . " KiB",
+            "peak"  => \round(\memory_get_peak_usage() / 1024, 2) . " KiB",
+        ],
+        "cache" => [
+            "count" => $countingStaticCache->count(),
+            "hits"  => $countingStaticCache->hits(),
+        ],
+        "averages" => [
+            "device_detection"      => (string) $osAndBrowser->average(),
+            "device_detection_hits" => $osAndBrowser->hits(),
+            "country_detection"     => (string) $country->average(),
+        ],
+    ];
+
+    yield $socket->write("I'm alive! Processed: $counter items.\n");
+    yield $socket->write(\json_encode($stats));
+    yield $socket->end("\n");
 });
 
 Loop::defer(function () use ($server, $handler) {
@@ -107,7 +186,7 @@ Loop::run(function () use ($options, $connection, $country, $osAndBrowser, &$cou
             return $channel;
         })
         ->then(function (Channel $channel) {
-            return $channel->qos(0, 5)->then(function () use ($channel) {
+            return $channel->qos(0, 20)->then(function () use ($channel) {
                 return $channel;
             });
         })
