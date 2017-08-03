@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
-use Amp\Deferred;
-use Amp\Loop;
+use function Amp\call;
 use Amp\Promise;
+use Aws\Result;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Queue;
 
@@ -21,20 +21,13 @@ final class CreateQueue
 
     public function create(Queue $queue): Promise
     {
-        $asyncRequest = $created = $this->client->createQueueAsync([
-            Params::QUEUE_NAME => $queue,
-        ]);
+        return call(function (Queue $queue) {
+            /** @var Result $result */
+            $result = yield adapt($this->client->createQueueAsync([
+                Params::QUEUE_NAME => $queue,
+            ]));
 
-        $deferred = new Deferred();
-
-        Loop::defer(function () use ($deferred, $asyncRequest) {
-            $response = $asyncRequest->wait(true);
-
-            $queueUrl = $response->get(Params::QUEUE_URL);
-
-            $deferred->resolve($queueUrl);
-        });
-
-        return $deferred->promise();
+            return $result->get(Params::QUEUE_URL);
+        }, $queue);
     }
 }

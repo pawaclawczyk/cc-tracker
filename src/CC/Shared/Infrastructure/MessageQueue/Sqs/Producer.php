@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
 use function Amp\call;
-use Amp\Deferred;
-use Amp\Loop;
 use Amp\Promise;
+use Aws\Result;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Message;
 use CC\Shared\Model\MessageQueue\Producer as ProducerContract;
@@ -26,23 +25,14 @@ final class Producer implements ProducerContract
 
     public function write(Queue $queueName, Message $message): Promise
     {
-        $coruotine = function () use ($queueName, $message) {
-            $asyncRequest = $this->client->sendMessageAsync([
+        return call(function (Queue $queueName, Message $message) {
+            /* @var Result $result */
+            yield adapt($this->client->sendMessageAsync([
                 Params::MESSAGE_BODY => (string) $message,
                 Params::QUEUE_URL    => yield $this->findOrCreateQueue->findOrCreate($queueName),
-            ]);
+            ]));
 
-            $deferred = new Deferred();
-
-            Loop::defer(function () use ($deferred, $asyncRequest) {
-                $result = $asyncRequest->wait(true);
-
-                $deferred->resolve($result);
-            });
-
-            return $deferred->promise();
-        };
-
-        return call($coruotine);
+            return true;
+        }, $queueName, $message);
     }
 }

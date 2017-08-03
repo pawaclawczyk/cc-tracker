@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
-use Amp\Deferred;
-use Amp\Loop;
+use function Amp\call;
 use Amp\Promise;
+use Aws\Result;
 use Aws\Sqs\Exception\SqsException;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Queue;
@@ -22,25 +22,19 @@ final class FindQueue
 
     public function find(Queue $queue): Promise
     {
-        $asyncRequest = $this->client->getQueueUrlAsync([Params::QUEUE_NAME => $queue]);
-
-        $deferred = new Deferred();
-
-        Loop::defer(function () use ($deferred, $asyncRequest) {
+        return call(function (Queue $queue) {
             try {
-                $result = $asyncRequest->wait(true);
-                $queueUrl = $result->get(Params::QUEUE_URL);
+                /** @var Result $result */
+                $result = yield adapt($this->client->getQueueUrlAsync([Params::QUEUE_NAME => $queue]));
+
+                return $result->get(Params::QUEUE_URL);
             } catch (SqsException $exception) {
                 if ("AWS.SimpleQueueService.NonExistentQueue" !== $exception->getAwsErrorCode()) {
                     throw $exception;
                 }
 
-                $queueUrl = "";
+                return "";
             }
-
-            $deferred->resolve($queueUrl);
-        });
-
-        return $deferred->promise();
+        }, $queue);
     }
 }

@@ -6,7 +6,6 @@ namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
 use function Amp\call;
 use Amp\Promise;
-use Amp\Success;
 use CC\Shared\Model\MessageQueue\Queue;
 
 final class FindOrCreateQueue
@@ -22,13 +21,10 @@ final class FindOrCreateQueue
 
     public function findOrCreate(Queue $queue): Promise
     {
-        $findQueue = $this->findQueue;
-        $createQueue = $this->createQueue;
-
-        return call(function () use ($findQueue, $createQueue, $queue) {
-            return ("" !== $queueUrl = yield $findQueue->find($queue))
-                ? new Success($queueUrl)
-                : $createQueue->create($queue);
-        });
+        return call(function (Queue $queue) {
+            return ("" !== $queueUrl = yield $this->findQueue->find($queue))
+                ? $queueUrl
+                : yield $this->createQueue->create($queue);
+        }, $queue);
     }
 }

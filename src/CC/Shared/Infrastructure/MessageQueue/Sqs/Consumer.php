@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
 use function Amp\call;
-use Amp\Deferred;
-use Amp\Loop;
 use Amp\Promise;
+use Aws\Result;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Consumer as ConsumerContract;
 use CC\Shared\Model\MessageQueue\Message;
@@ -29,16 +28,21 @@ final class Consumer implements ConsumerContract
 
     public function read(Queue $queue): Promise
     {
-        return call(function () use ($queue) {
+        return call(function (Queue $queue) {
             $queueUrl = yield $this->findOrCreateQueue->findOrCreate($queue);
 
-            $asyncRequest = $this->client->receiveMessageAsync([
+            /** @var Result $result */
+            $result = yield adapt($this->client->receiveMessageAsync([
                 Params::MAX_NUMBER_OF_MESSAGES => $this->maxNumberOfMessages,
                 Params::QUEUE_URL              => $queueUrl,
                 Params::VISIBILITY_TIMEOUT     => $this->visibilityTimeout,
-            ]);
+            ]));
 
-            $deferred = new Deferred();
+            $messages = $result->get(Params::MESSAGES);
+
+            if (null === $messages) {
+                return [];
+            }
 
             $parseMessage = function (array $data) use ($queueUrl): Message {
                 $message = new Message($data[Params::BODY]);
@@ -49,19 +53,7 @@ final class Consumer implements ConsumerContract
                     ->withMetadata(new Map([Params::QUEUE_URL => $queueUrl]));
             };
 
-            Loop::defer(function () use ($deferred, $asyncRequest, $parseMessage) {
-                $result = $asyncRequest->wait(true);
-
-                if (null === $result->get(Params::MESSAGES)) {
-                    $deferred->resolve([]);
-                } else {
-                    $messages = \array_map($parseMessage, $result->get(Params::MESSAGES));
-
-                    $deferred->resolve($messages);
-                }
-            });
-
-            return $deferred->promise();
-        });
+            return \array_map($parseMessage, $messages);
+        }, $queue);
     }
 }

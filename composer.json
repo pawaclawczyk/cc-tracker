@@ -29,7 +29,10 @@
     "autoload": {
         "psr-4": {
             "": "src/"
-        }
+        },
+        "files": [
+            "src/CC/Shared/Infrastructure/MessageQueue/Sqs/functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
