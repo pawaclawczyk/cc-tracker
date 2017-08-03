@@ -27,6 +27,8 @@ class RabbitMessageQueueTest extends TestCase
     /** @test */
     public function it_sends_message()
     {
+        $this->markTestSkipped("Refactoring time!");
+
         $messageToSend = Message::fromString('Hello world!');
 
         $promise = $this->messageQueue->send($messageToSend);

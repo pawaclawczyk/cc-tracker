@@ -51,10 +51,13 @@ class SqsTest extends TestCase
     public function it_creates_queue()
     {
         $queue = new Queue(\uniqid("existing"));
-        $queueUrl = $this->createQueue->create($queue);
 
-        $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queue}", $queueUrl);
+        Loop::run(function () use ($queue) {
+            $queueUrl = yield $this->createQueue->create($queue);
+
+            $this->assertInternalType("string", $queueUrl);
+            $this->assertStringEndsWith("/{$queue}", $queueUrl);
+        });
 
         $this->deleteQueue->delete($queue);
     }
@@ -63,12 +66,15 @@ class SqsTest extends TestCase
     public function it_finds_existing_queue()
     {
         $queue = new Queue(\uniqid("existing"));
-        $this->createQueue->create($queue);
 
-        $queueUrl = $this->findQueue->find($queue);
+        Loop::run(function () use ($queue) {
+            yield $this->createQueue->create($queue);
 
-        $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queue}", $queueUrl);
+            $queueUrl = $this->findQueue->find($queue);
+
+            $this->assertInternalType("string", $queueUrl);
+            $this->assertStringEndsWith("/{$queue}", $queueUrl);
+        });
 
         $this->deleteQueue->delete($queue);
     }
@@ -88,10 +94,12 @@ class SqsTest extends TestCase
     {
         $queue = new Queue(\uniqid("not-existing-yet"));
 
-        $queueUrl = $this->findOrCreateQueue->findOrCreate($queue);
+        Loop::run(function () use ($queue) {
+            $queueUrl = yield $this->findOrCreateQueue->findOrCreate($queue);
 
-        $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queue}", $queueUrl);
+            $this->assertInternalType("string", $queueUrl);
+            $this->assertStringEndsWith("/{$queue}", $queueUrl);
+        });
 
         $this->deleteQueue->delete($queue);
     }
@@ -100,12 +108,15 @@ class SqsTest extends TestCase
     public function it_finds_or_creates_queue_when_queue_already_exists()
     {
         $queue = new Queue(\uniqid("already-existing"));
-        $this->createQueue->create($queue);
 
-        $queueUrl = $this->findOrCreateQueue->findOrCreate($queue);
+        Loop::run(function () use ($queue) {
+            yield $this->createQueue->create($queue);
 
-        $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queue}", $queueUrl);
+            $queueUrl = yield $this->findOrCreateQueue->findOrCreate($queue);
+
+            $this->assertInternalType("string", $queueUrl);
+            $this->assertStringEndsWith("/{$queue}", $queueUrl);
+        });
 
         $this->deleteQueue->delete($queue);
     }

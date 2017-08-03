@@ -29,7 +29,7 @@ final class AcknowledgeMessage
         $deferred = new Deferred();
 
         Loop::defer(function () use ($deferred, $asyncRequest) {
-            $asyncRequest->wait();
+            $asyncRequest->wait(true);
 
             $deferred->resolve(true);
         });
