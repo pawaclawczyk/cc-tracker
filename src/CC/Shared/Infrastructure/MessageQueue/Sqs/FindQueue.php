@@ -6,6 +6,7 @@ namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
 use Aws\Sqs\Exception\SqsException;
 use Aws\Sqs\SqsClient;
+use CC\Shared\Model\MessageQueue\Queue;
 
 final class FindQueue
 {
@@ -16,21 +17,21 @@ final class FindQueue
         $this->client = $client;
     }
 
-    public function find(string $queueName): string
+    public function find(Queue $queue): string
     {
         try {
-            $queue = (string) $this
+            $queueUrl = (string) $this
                 ->client
-                ->getQueueUrl([Params::QUEUE_NAME => $queueName])
+                ->getQueueUrl([Params::QUEUE_NAME => $queue])
                 ->get(Params::QUEUE_URL);
         } catch (SqsException $exception) {
             if ("AWS.SimpleQueueService.NonExistentQueue" !== $exception->getAwsErrorCode()) {
                 throw $exception;
             }
 
-            $queue = "";
+            $queueUrl = "";
         }
 
-        return $queue;
+        return $queueUrl;
     }
 }

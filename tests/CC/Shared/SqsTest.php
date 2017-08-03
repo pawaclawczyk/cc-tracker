@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\CC\Shared;
 
 use Amp\Loop;
-use Aws\Sqs\Exception\SqsException;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Infrastructure\MessageQueue\Sqs\AcknowledgeMessage;
 use CC\Shared\Infrastructure\MessageQueue\Sqs\CreateQueue;
@@ -16,12 +15,11 @@ use CC\Shared\Infrastructure\MessageQueue\Sqs\FindQueue;
 use CC\Shared\Infrastructure\MessageQueue\Sqs\Producer;
 use CC\Shared\Infrastructure\MessageQueue\Sqs\PurgeQueue;
 use CC\Shared\Model\MessageQueue\Message;
+use CC\Shared\Model\MessageQueue\Queue;
 use PHPUnit\Framework\TestCase;
 
 class SqsTest extends TestCase
 {
-    const QUEUE_NAME = "test-queue";
-
     /** @var SqsClient */
     private $client;
 
@@ -43,26 +41,20 @@ class SqsTest extends TestCase
     /** @var DeleteQueue */
     private $deleteQueue;
 
-    /** @test */
-    public function it_cannot_write_to_not_existing_queue()
-    {
-        $this->expectException(SqsException::class);
+    /** @var Consumer */
+    private $consumer;
 
-        $producer = new Producer($this->client, "not-existing");
-
-        Loop::run(function () use ($producer) {
-            $producer->write(new Message("Test"));
-        });
-    }
+    /** @var Producer */
+    private $producer;
 
     /** @test */
     public function it_creates_queue()
     {
-        $queueName = \uniqid("existing");
-        $queueUrl = $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("existing"));
+        $queueUrl = $this->createQueue->create($queue);
 
         $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queueName}", $queueUrl);
+        $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
         $this->deleteQueue->delete($queueUrl);
     }
@@ -70,13 +62,13 @@ class SqsTest extends TestCase
     /** @test */
     public function it_finds_existing_queue()
     {
-        $queueName = \uniqid("existing");
-        $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("existing"));
+        $this->createQueue->create($queue);
 
-        $queueUrl = $this->findQueue->find($queueName);
+        $queueUrl = $this->findQueue->find($queue);
 
         $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queueName}", $queueUrl);
+        $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
         $this->deleteQueue->delete($queueUrl);
     }
@@ -84,9 +76,9 @@ class SqsTest extends TestCase
     /** @test */
     public function it_finds_empty_queue_url_if_queue_does_not_exist()
     {
-        $queueName = "not-existing";
+        $queue = new Queue("not-existing");
 
-        $queueUrl = $this->findQueue->find($queueName);
+        $queueUrl = $this->findQueue->find($queue);
 
         $this->assertEquals("", $queueUrl);
     }
@@ -94,12 +86,12 @@ class SqsTest extends TestCase
     /** @test */
     public function it_finds_or_creates_queue_when_queue_does_not_exist_yet()
     {
-        $queueName = \uniqid("not-existing-yet");
+        $queue = new Queue(\uniqid("not-existing-yet"));
 
-        $queueUrl = $this->findOrCreateQueue->findOrCreate($queueName);
+        $queueUrl = $this->findOrCreateQueue->findOrCreate($queue);
 
         $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queueName}", $queueUrl);
+        $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
         $this->deleteQueue->delete($queueUrl);
     }
@@ -107,13 +99,13 @@ class SqsTest extends TestCase
     /** @test */
     public function it_finds_or_creates_queue_when_queue_already_exists()
     {
-        $queueName = \uniqid("already-existing");
-        $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("already-existing"));
+        $this->createQueue->create($queue);
 
-        $queueUrl = $this->findOrCreateQueue->findOrCreate($queueName);
+        $queueUrl = $this->findOrCreateQueue->findOrCreate($queue);
 
         $this->assertInternalType("string", $queueUrl);
-        $this->assertStringEndsWith("/{$queueName}", $queueUrl);
+        $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
         $this->deleteQueue->delete($queueUrl);
     }
@@ -121,13 +113,13 @@ class SqsTest extends TestCase
     /** @test */
     public function it_consumes_messages_from_empty_queue()
     {
-        $queueName = \uniqid("empty");
-        $queueUrl = $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("empty"));
+        $queueUrl = $this->createQueue->create($queue);
 
-        $consumer = new Consumer($this->client, $queueUrl);
+        $consumer = $this->consumer;
 
-        Loop::run(function () use ($consumer) {
-            $messages = yield $consumer->read();
+        Loop::run(function () use ($queue, $consumer) {
+            $messages = yield $consumer->read($queue);
 
             $this->assertCount(0, $messages);
         });
@@ -138,15 +130,15 @@ class SqsTest extends TestCase
     /** @test */
     public function it_produces_and_consumes_messages()
     {
-        $queueName = \uniqid("produce-consume");
-        $queueUrl = $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("produce-consume"));
+        $queueUrl = $this->createQueue->create($queue);
 
-        $producer = new Producer($this->client, $queueUrl);
-        $consumer = new Consumer($this->client, $queueUrl);
+        $producer = $this->producer;
+        $consumer = $this->consumer;
 
-        Loop::run(function () use ($producer, $consumer) {
-            yield $producer->write(new Message("Produced message."));
-            $messages = yield $consumer->read();
+        Loop::run(function () use ($queue, $producer, $consumer) {
+            yield $producer->write($queue, new Message("Produced message."));
+            $messages = yield $consumer->read($queue);
 
             $this->assertCount(1, $messages);
             $this->assertEquals("Produced message.", (string) $messages[0]);
@@ -156,22 +148,41 @@ class SqsTest extends TestCase
     }
 
     /** @test */
+    public function it_produces_and_consumes_messages_and_creates_queue_if_it_does_not_exist()
+    {
+        $queue = new Queue(\uniqid("not-existing-yet"));
+
+        $producer = $this->producer;
+        $consumer = $this->consumer;
+
+        Loop::run(function () use ($queue, $producer, $consumer) {
+            yield $producer->write($queue, new Message("Produced message."));
+            $messages = yield $consumer->read($queue);
+
+            $this->assertCount(1, $messages);
+            $this->assertEquals("Produced message.", (string) $messages[0]);
+        });
+
+        $this->deleteQueue->delete($this->findQueue->find($queue));
+    }
+
+    /** @test */
     public function it_consumes_messages_in_batches_up_to_ten()
     {
-        $queueName = \uniqid("up-to-ten");
-        $queueUrl = $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("up-to-ten"));
+        $queueUrl = $this->createQueue->create($queue);
 
-        $producer = new Producer($this->client, $queueUrl);
-        $consumer = new Consumer($this->client, $queueUrl);
+        $producer = $this->producer;
+        $consumer = $this->consumer;
 
-        Loop::run(function () use ($producer, $consumer) {
+        Loop::run(function () use ($queue, $producer, $consumer) {
             for ($i = 1; $i <= 11; ++$i) {
-                yield $producer->write(new Message("Produced message: {$i}."));
+                yield $producer->write($queue, new Message("Produced message: {$i}."));
             }
 
             $totalCount = 0;
             $batchesCount = 0;
-            while ($messages = yield $consumer->read()) {
+            while ($messages = yield $consumer->read($queue)) {
                 $count = \count($messages);
 
                 $this->assertGreaterThanOrEqual(1, $count);
@@ -195,22 +206,22 @@ class SqsTest extends TestCase
     /** @test */
     public function it_purges_queue()
     {
-        $queueName = \uniqid("purge");
-        $queueUrl = $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("purge"));
+        $queueUrl = $this->createQueue->create($queue);
 
-        $producer = new Producer($this->client, $queueUrl);
-        $consumer = new Consumer($this->client, $queueUrl);
+        $producer = $this->producer;
+        $consumer = $this->consumer;
 
         $purgeQueue = $this->purgeQueue;
 
-        Loop::run(function () use ($producer, $purgeQueue, $queueUrl, $consumer) {
+        Loop::run(function () use ($queue, $producer, $purgeQueue, $queueUrl, $consumer) {
             for ($i = 1; $i <= 10; ++$i) {
-                yield $producer->write(new Message("Produced message: {$i}."));
+                yield $producer->write($queue, new Message("Produced message: {$i}."));
             }
 
             $purgeQueue->purge($queueUrl);
 
-            $messages = yield $consumer->read();
+            $messages = yield $consumer->read($queue);
 
             $this->assertCount(0, $messages);
         });
@@ -221,12 +232,12 @@ class SqsTest extends TestCase
     /** @test */
     public function it_deletes_queue()
     {
-        $queueName = \uniqid("delete");
-        $queueUrl = $this->createQueue->create($queueName);
+        $queue = new Queue(\uniqid("delete"));
+        $queueUrl = $this->createQueue->create($queue);
 
         $this->deleteQueue->delete($queueUrl);
 
-        $notFoundQueueUrl = $this->findQueue->find($queueName);
+        $notFoundQueueUrl = $this->findQueue->find($queue);
 
         $this->assertEquals("", $notFoundQueueUrl);
     }
@@ -248,6 +259,9 @@ class SqsTest extends TestCase
         $this->acknowledgeMessage = new AcknowledgeMessage($this->client);
         $this->purgeQueue = new PurgeQueue($this->client);
         $this->deleteQueue = new DeleteQueue($this->client);
+
+        $this->consumer = new Consumer($this->client, $this->findOrCreateQueue);
+        $this->producer = new Producer($this->client, $this->findOrCreateQueue);
     }
 
     protected function tearDown()
@@ -261,5 +275,8 @@ class SqsTest extends TestCase
         $this->acknowledgeMessage = null;
         $this->purgeQueue = null;
         $this->deleteQueue = null;
+
+        $this->consumer = null;
+        $this->producer = null;
     }
 }

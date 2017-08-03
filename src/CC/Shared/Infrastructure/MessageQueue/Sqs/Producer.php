@@ -10,23 +10,24 @@ use Amp\Promise;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Message;
 use CC\Shared\Model\MessageQueue\Producer as ProducerContract;
+use CC\Shared\Model\MessageQueue\Queue;
 
 final class Producer implements ProducerContract
 {
     private $client;
-    private $queueUrl;
+    private $findOrCreateQueue;
 
-    public function __construct(SqsClient $client, string $queueUrl)
+    public function __construct(SqsClient $client, FindOrCreateQueue $findOrCreateQueue)
     {
         $this->client = $client;
-        $this->queueUrl = $queueUrl;
+        $this->findOrCreateQueue = $findOrCreateQueue;
     }
 
-    public function write(Message $message): Promise
+    public function write(Queue $queueName, Message $message): Promise
     {
         $asyncRequest = $this->client->sendMessageAsync([
             Params::MESSAGE_BODY => (string) $message,
-            Params::QUEUE_URL    => $this->queueUrl,
+            Params::QUEUE_URL    => $this->findOrCreateQueue->findOrCreate($queueName),
         ]);
 
         $deferred = new Deferred();

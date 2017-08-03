@@ -8,5 +8,5 @@ use Amp\Promise;
 
 interface Consumer
 {
-    public function read(): Promise;
+    public function read(Queue $queue): Promise;
 }

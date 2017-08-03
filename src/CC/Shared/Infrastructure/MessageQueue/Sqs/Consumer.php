@@ -10,30 +10,31 @@ use Amp\Promise;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Consumer as ConsumerContract;
 use CC\Shared\Model\MessageQueue\Message;
+use CC\Shared\Model\MessageQueue\Queue;
 use Ds\Map;
 
 final class Consumer implements ConsumerContract
 {
     private $client;
-    private $queueUrl;
+    private $findOrCreateQueue;
     private $maxNumberOfMessages = 10;
 
-    public function __construct(SqsClient $client, string $queueUrl)
+    public function __construct(SqsClient $client, FindOrCreateQueue $findOrCreateQueue)
     {
         $this->client = $client;
-        $this->queueUrl = $queueUrl;
+        $this->findOrCreateQueue = $findOrCreateQueue;
     }
 
-    public function read(): Promise
+    public function read(Queue $queue): Promise
     {
+        $queueUrl = $this->findOrCreateQueue->findOrCreate($queue);
+
         $asyncRequest = $this->client->receiveMessageAsync([
             Params::MAX_NUMBER_OF_MESSAGES => $this->maxNumberOfMessages,
-            Params::QUEUE_URL              => $this->queueUrl,
+            Params::QUEUE_URL              => $queueUrl,
         ]);
 
         $deferred = new Deferred();
-
-        $queueUrl = $this->queueUrl;
 
         $parseMessage = function (array $data) use ($queueUrl): Message {
             $message = new Message($data[Params::BODY]);

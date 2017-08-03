@@ -8,5 +8,5 @@ use Amp\Promise;
 
 interface Producer
 {
-    public function write(Message $message): Promise;
+    public function write(Queue $queue, Message $message): Promise;
 }

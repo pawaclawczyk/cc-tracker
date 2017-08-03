@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
+use CC\Shared\Model\MessageQueue\Queue;
+
 final class FindOrCreateQueue
 {
     private $findQueue;
@@ -15,10 +17,10 @@ final class FindOrCreateQueue
         $this->createQueue = $createQueue;
     }
 
-    public function findOrCreate(string $queueName): string
+    public function findOrCreate(Queue $queue): string
     {
-        return ("" !== $queueUrl = $this->findQueue->find($queueName))
+        return ("" !== $queueUrl = $this->findQueue->find($queue))
             ? $queueUrl
-            : $this->createQueue->create($queueName);
+            : $this->createQueue->create($queue);
     }
 }
