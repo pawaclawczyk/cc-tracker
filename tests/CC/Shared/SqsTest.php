@@ -70,7 +70,7 @@ class SqsTest extends TestCase
         Loop::run(function () use ($queue) {
             yield $this->createQueue->create($queue);
 
-            $queueUrl = $this->findQueue->find($queue);
+            $queueUrl = yield $this->findQueue->find($queue);
 
             $this->assertInternalType("string", $queueUrl);
             $this->assertStringEndsWith("/{$queue}", $queueUrl);
@@ -82,11 +82,15 @@ class SqsTest extends TestCase
     /** @test */
     public function it_finds_empty_queue_url_if_queue_does_not_exist()
     {
-        $queue = new Queue("not-existing");
+        $findQueue = $this->findQueue;
 
-        $queueUrl = $this->findQueue->find($queue);
+        Loop::run(function () use ($findQueue) {
+            $queue = new Queue("not-existing");
 
-        $this->assertEquals("", $queueUrl);
+            $queueUrl = yield $findQueue->find($queue);
+
+            $this->assertEquals("", $queueUrl);
+        });
     }
 
     /** @test */
@@ -94,8 +98,10 @@ class SqsTest extends TestCase
     {
         $queue = new Queue(\uniqid("not-existing-yet"));
 
-        Loop::run(function () use ($queue) {
-            $queueUrl = yield $this->findOrCreateQueue->findOrCreate($queue);
+        $findOrCreateQueue = $this->findOrCreateQueue;
+
+        Loop::run(function () use ($findOrCreateQueue, $queue) {
+            $queueUrl = yield $findOrCreateQueue->findOrCreate($queue);
 
             $this->assertInternalType("string", $queueUrl);
             $this->assertStringEndsWith("/{$queue}", $queueUrl);
@@ -276,11 +282,14 @@ class SqsTest extends TestCase
     {
         $queue = new Queue(\uniqid("delete"));
 
-        $this->deleteQueue->delete($queue);
+        Loop::run(function () use ($queue) {
+            yield $this->createQueue->create($queue);
+            yield $this->deleteQueue->delete($queue);
 
-        $notFoundQueueUrl = $this->findQueue->find($queue);
+            $notFoundQueueUrl = yield $this->findQueue->find($queue);
 
-        $this->assertEquals("", $notFoundQueueUrl);
+            $this->assertEquals("", $notFoundQueueUrl);
+        });
     }
 
     protected function setUp()

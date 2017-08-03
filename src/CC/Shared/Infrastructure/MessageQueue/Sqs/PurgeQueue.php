@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
+use function Amp\call;
+use Amp\Promise;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Queue;
 
@@ -18,16 +20,18 @@ final class PurgeQueue
         $this->findQueue = $findQueue;
     }
 
-    public function purge(Queue $queue): bool
+    public function purge(Queue $queue): Promise
     {
-        if ("" === $queueUrl = $this->findQueue->find($queue)) {
+        return call(function () use ($queue) {
+            if ("" === $queueUrl = yield $this->findQueue->find($queue)) {
+                return true;
+            }
+
+            $this->client->purgeQueue([
+                Params::QUEUE_URL => $queueUrl,
+            ]);
+
             return true;
-        }
-
-        $this->client->purgeQueue([
-            Params::QUEUE_URL => $queueUrl,
-        ]);
-
-        return true;
+        });
     }
 }
