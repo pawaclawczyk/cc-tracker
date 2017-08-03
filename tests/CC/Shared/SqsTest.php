@@ -204,19 +204,18 @@ class SqsTest extends TestCase
     public function it_purges_queue()
     {
         $queue = new Queue(\uniqid("purge"));
-        $queueUrl = $this->createQueue->create($queue);
 
         $producer = $this->producer;
         $consumer = $this->consumer;
 
         $purgeQueue = $this->purgeQueue;
 
-        Loop::run(function () use ($queue, $producer, $purgeQueue, $queueUrl, $consumer) {
+        Loop::run(function () use ($queue, $producer, $purgeQueue, $consumer) {
             for ($i = 1; $i <= 10; ++$i) {
                 yield $producer->write($queue, new Message("Produced message: {$i}."));
             }
 
-            $purgeQueue->purge($queueUrl);
+            $purgeQueue->purge($queue);
 
             $messages = yield $consumer->read($queue);
 
@@ -253,7 +252,7 @@ class SqsTest extends TestCase
         $this->createQueue = new CreateQueue($this->client);
         $this->findOrCreateQueue = new FindOrCreateQueue($this->findQueue, $this->createQueue);
         $this->acknowledgeMessage = new AcknowledgeMessage($this->client);
-        $this->purgeQueue = new PurgeQueue($this->client);
+        $this->purgeQueue = new PurgeQueue($this->client, $this->findQueue);
         $this->deleteQueue = new DeleteQueue($this->client, $this->findQueue);
 
         $this->consumer = new Consumer($this->client, $this->findOrCreateQueue);
