@@ -40,6 +40,8 @@ class PixelControllerTest extends TestCase
     /** @test */
     public function it_sends_message_to_queue()
     {
+        $this->markTestSkipped("Refactoring time!.");
+
         $this->reader->purge($this->queueName);
 
         \usleep(1000);
@@ -72,7 +74,7 @@ class PixelControllerTest extends TestCase
         $this->reader = new RabbitMessageQueueReader($configs[$client]);
 
         $this->client = new Client([
-            'base_uri' => "http://127.0.0.1:" . $port,
+            'base_uri' => "http://tracker:" . $port,
         ]);
     }
 }
