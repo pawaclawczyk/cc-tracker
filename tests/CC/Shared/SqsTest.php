@@ -267,7 +267,7 @@ class SqsTest extends TestCase
                 yield $producer->write($queue, new Message("Produced message: {$i}."));
             }
 
-            $purgeQueue->purge($queue);
+            yield $purgeQueue->purge($queue);
 
             $messages = yield $consumer->read($queue);
 

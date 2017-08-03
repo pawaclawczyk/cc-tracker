@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace CC\Shared\Infrastructure\MessageQueue\Sqs;
 
 use function Amp\call;
+use Amp\Deferred;
+use Amp\Loop;
 use Amp\Promise;
 use Aws\Sqs\SqsClient;
 use CC\Shared\Model\MessageQueue\Queue;
@@ -22,16 +24,24 @@ final class DeleteQueue
 
     public function delete(Queue $queue): Promise
     {
-        return call(function () use ($queue) {
+        return call(function (Queue $queue) {
             if ("" === $queueUrl = yield $this->findQueue->find($queue)) {
                 return true;
             }
 
-            $this->client->deleteQueue([
+            $asyncRequest = $this->client->deleteQueueAsync([
                 Params::QUEUE_URL => $queueUrl,
             ]);
 
-            return true;
-        });
+            $deferred = new Deferred();
+
+            Loop::defer(function () use ($asyncRequest, $deferred) {
+                $asyncRequest->wait(true);
+
+                $deferred->resolve(true);
+            });
+
+            return $deferred->promise();
+        }, $queue);
     }
 }
