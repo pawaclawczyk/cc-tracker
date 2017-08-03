@@ -201,6 +201,41 @@ class SqsTest extends TestCase
     }
 
     /** @test */
+    public function it_acknowledges_messages()
+    {
+        $queue = new Queue(\uniqid("acknowledge"));
+
+        $producer = $this->producer;
+        $consumer = $this->consumer;
+
+        $reflection = new \ReflectionObject($consumer);
+        $property = $reflection->getProperty("visibilityTimeout");
+        $property->setAccessible(true);
+        $property->setValue($consumer, 1);
+
+        $acknowledgeMessage = $this->acknowledgeMessage;
+
+        Loop::run(function () use ($queue, $producer, $consumer, $acknowledgeMessage) {
+            yield $producer->write($queue, new Message("Produced message."));
+            $messages = yield $consumer->read($queue);
+
+            $this->assertCount(1, $messages);
+
+            \sleep(1);
+
+            $ack = yield $acknowledgeMessage->ack($messages[0]);
+
+            $this->assertTrue($ack);
+
+            $messages = yield $consumer->read($queue);
+
+            $this->assertCount(0, $messages);
+        });
+
+        $this->deleteQueue->delete($queue);
+    }
+
+    /** @test */
     public function it_purges_queue()
     {
         $queue = new Queue(\uniqid("purge"));

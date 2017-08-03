@@ -15,4 +15,5 @@ final class Params
     const QUEUE_NAME_PREFIX = "QueueNamePrefix";
     const QUEUE_URLS = "QueueUrls";
     const MESSAGE_BODY = "MessageBody";
+    const VISIBILITY_TIMEOUT = "VisibilityTimeout";
 }

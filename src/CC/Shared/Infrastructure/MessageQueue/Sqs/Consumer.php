@@ -18,6 +18,7 @@ final class Consumer implements ConsumerContract
     private $client;
     private $findOrCreateQueue;
     private $maxNumberOfMessages = 10;
+    private $visibilityTimeout = 30;
 
     public function __construct(SqsClient $client, FindOrCreateQueue $findOrCreateQueue)
     {
@@ -32,6 +33,7 @@ final class Consumer implements ConsumerContract
         $asyncRequest = $this->client->receiveMessageAsync([
             Params::MAX_NUMBER_OF_MESSAGES => $this->maxNumberOfMessages,
             Params::QUEUE_URL              => $queueUrl,
+            Params::VISIBILITY_TIMEOUT     => $this->visibilityTimeout,
         ]);
 
         $deferred = new Deferred();
