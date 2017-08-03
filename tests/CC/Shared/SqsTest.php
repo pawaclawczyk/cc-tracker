@@ -56,7 +56,7 @@ class SqsTest extends TestCase
         $this->assertInternalType("string", $queueUrl);
         $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
@@ -70,7 +70,7 @@ class SqsTest extends TestCase
         $this->assertInternalType("string", $queueUrl);
         $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
@@ -93,7 +93,7 @@ class SqsTest extends TestCase
         $this->assertInternalType("string", $queueUrl);
         $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
@@ -107,14 +107,13 @@ class SqsTest extends TestCase
         $this->assertInternalType("string", $queueUrl);
         $this->assertStringEndsWith("/{$queue}", $queueUrl);
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
     public function it_consumes_messages_from_empty_queue()
     {
         $queue = new Queue(\uniqid("empty"));
-        $queueUrl = $this->createQueue->create($queue);
 
         $consumer = $this->consumer;
 
@@ -124,14 +123,13 @@ class SqsTest extends TestCase
             $this->assertCount(0, $messages);
         });
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
     public function it_produces_and_consumes_messages()
     {
         $queue = new Queue(\uniqid("produce-consume"));
-        $queueUrl = $this->createQueue->create($queue);
 
         $producer = $this->producer;
         $consumer = $this->consumer;
@@ -144,7 +142,7 @@ class SqsTest extends TestCase
             $this->assertEquals("Produced message.", (string) $messages[0]);
         });
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
@@ -163,14 +161,13 @@ class SqsTest extends TestCase
             $this->assertEquals("Produced message.", (string) $messages[0]);
         });
 
-        $this->deleteQueue->delete($this->findQueue->find($queue));
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
     public function it_consumes_messages_in_batches_up_to_ten()
     {
         $queue = new Queue(\uniqid("up-to-ten"));
-        $queueUrl = $this->createQueue->create($queue);
 
         $producer = $this->producer;
         $consumer = $this->consumer;
@@ -200,7 +197,7 @@ class SqsTest extends TestCase
             $this->assertLessThan(11, $batchesCount);
         });
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
@@ -226,16 +223,15 @@ class SqsTest extends TestCase
             $this->assertCount(0, $messages);
         });
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
     }
 
     /** @test */
     public function it_deletes_queue()
     {
         $queue = new Queue(\uniqid("delete"));
-        $queueUrl = $this->createQueue->create($queue);
 
-        $this->deleteQueue->delete($queueUrl);
+        $this->deleteQueue->delete($queue);
 
         $notFoundQueueUrl = $this->findQueue->find($queue);
 
@@ -258,7 +254,7 @@ class SqsTest extends TestCase
         $this->findOrCreateQueue = new FindOrCreateQueue($this->findQueue, $this->createQueue);
         $this->acknowledgeMessage = new AcknowledgeMessage($this->client);
         $this->purgeQueue = new PurgeQueue($this->client);
-        $this->deleteQueue = new DeleteQueue($this->client);
+        $this->deleteQueue = new DeleteQueue($this->client, $this->findQueue);
 
         $this->consumer = new Consumer($this->client, $this->findOrCreateQueue);
         $this->producer = new Producer($this->client, $this->findOrCreateQueue);
