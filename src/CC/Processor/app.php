@@ -186,9 +186,10 @@ Loop::run(function () use ($options, $connection, $country, $osAndBrowser, &$cou
             return $channel;
         })
         ->then(function (Channel $channel) {
-            return $channel->qos(0, 20)->then(function () use ($channel) {
-                return $channel;
-            });
+            return $channel->qos(0, 20)
+                ->then(function () use ($channel) {
+                    return $channel;
+                });
         })
         ->then(function (Channel $channel) use ($connection, $country, $osAndBrowser, &$counter) {
             $channel->consume(
