@@ -20,8 +20,8 @@ use CC\Shared\Memoize;
 use DeviceDetector\Cache\Cache;
 use DeviceDetector\Cache\StaticCache;
 use DeviceDetector\DeviceDetector;
-use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\DriverManager;
+use Ds\Queue;
 use GeoIp2\Database\Reader;
 use GeoIp2\Exception\AddressNotFoundException;
 
@@ -142,11 +142,13 @@ $_country = function (array $data) use ($ip, $geoIP): string {
 
 $country = AverageExecution::lift($_country);
 
+$inserts = new Queue();
+
 $counter = 0;
 
 $server = listen("127.0.0.1:9898");
 
-$handler = asyncCoroutine(function (ServerSocket $socket) use (&$counter, $countingStaticCache, $osAndBrowser, $country) {
+$handler = asyncCoroutine(function (ServerSocket $socket) use (&$counter, $countingStaticCache, $osAndBrowser, $country, $inserts) {
     $stats = [
         "memory" => [
             "usage" => \round(\memory_get_usage() / 1024, 2) . " KiB",
@@ -161,6 +163,7 @@ $handler = asyncCoroutine(function (ServerSocket $socket) use (&$counter, $count
             "device_detection_hits" => $osAndBrowser->hits(),
             "country_detection"     => (string) $country->average(),
         ],
+        "inserts" => $inserts->count(),
     ];
 
     yield $socket->write("I'm alive! Processed: $counter items.\n");
@@ -168,13 +171,34 @@ $handler = asyncCoroutine(function (ServerSocket $socket) use (&$counter, $count
     yield $socket->end("\n");
 });
 
+$flushInsertBuffer = function () use ($inserts, $connection) {
+    $count = 0;
+    $query = "INSERT INTO raw_requests VALUES ";
+    $params = [];
+
+    while (!$inserts->isEmpty() && $count < 100) {
+        $requestData = $inserts->pop();
+        $keys = \array_map(function (string $key) use ($count): string { return ':' . $key . $count; }, \array_keys($requestData));
+        $query = \sprintf("%s (null, %s),", $query, \implode(',', $keys));
+        $params = \array_merge($params, \array_combine($keys, \array_values($requestData)));
+    }
+
+    $query = \trim($query, ',');
+
+    if (!empty($params)) {
+        $connection->executeQuery($query, $params);
+    }
+};
+
+Loop::repeat(100, $flushInsertBuffer);
+
 Loop::defer(function () use ($server, $handler) {
     while ($socket = yield $server->accept()) {
         $handler($socket);
     }
 });
 
-Loop::run(function () use ($options, $connection, $country, $osAndBrowser, &$counter) {
+Loop::run(function () use ($options, $connection, $country, $osAndBrowser, $inserts, &$counter) {
     (new Client(ReactAdapter::get(), $options))
         ->connect()
         ->then(function (Client $client) {
@@ -190,31 +214,23 @@ Loop::run(function () use ($options, $connection, $country, $osAndBrowser, &$cou
                 return $channel;
             });
         })
-        ->then(function (Channel $channel) use ($connection, $country, $osAndBrowser, &$counter) {
+        ->then(function (Channel $channel) use ($connection, $country, $osAndBrowser, $inserts, &$counter) {
             $channel->consume(
-                function (Message $message, Channel $channel, Client $client) use ($connection, $country, $osAndBrowser, &$counter) {
+                function (Message $message, Channel $channel, Client $client) use ($connection, $country, $osAndBrowser, $inserts, &$counter) {
                     $data = \json_decode($message->content, true);
 
                     [$os, $browser] = $osAndBrowser($data["user-agent"][0]);
 
-                    try {
-                        $connection
-                            ->executeQuery(
-                                'INSERT INTO raw_requests VALUES(null, :content, :country, :os, :browser)',
-                                [
-                                    "content" => $message->content,
-                                    "country" => $country($data),
-                                    "os"      => $os,
-                                    "browser" => $browser,
-                                ]
-                            );
+                    $requestData = [
+                        "content" => $message->content,
+                        "country" => $country($data),
+                        "os"      => $os,
+                        "browser" => $browser,
+                    ];
 
-                        ++$counter;
-
-                        $channel->ack($message);
-                    } catch (DBALException $exception) {
-                        $channel->nack($message);
-                    }
+                    $inserts->push($requestData);
+                    ++$counter;
+                    $channel->ack($message);
                 },
                 'cc-tracker'
             );
